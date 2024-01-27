@@ -1,0 +1,12 @@
+# Add files here to ignore them from prettier formatting
+
+/dist
+/coverage
+/node_modules
+/**/images/**/*
+.docusaurus/
+CHANGELOG.md
+
+.angular
+
+/.nx/cache

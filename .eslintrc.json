@@ -1,0 +1,37 @@
+{
+  "root": true,
+  "ignorePatterns": ["**/*"],
+  "plugins": ["unused-imports", "simple-import-sort"],
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "extends": [
+        "prettier",
+        "eslint:recommended",
+        "plugin:prettier/recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "parserOptions": {
+        "project": "./tsconfig.*?.json"
+      },
+      "rules": {
+        "@typescript-eslint/ban-ts-comment": "warn",
+        "@typescript-eslint/no-inferrable-types": "warn",
+        "@typescript-eslint/ban-types": "warn",
+        "@typescript-eslint/no-empty-interface": "warn",
+        "@typescript-eslint/no-empty-function": "warn",
+        "@typescript-eslint/no-unused-vars": "off",
+        "@typescript-eslint/no-explicit-any": "warn",
+        "prefer-rest-params": "warn",
+        "no-prototype-builtins": "warn",
+        "no-unused-vars": "off",
+        "unused-imports/no-unused-imports": "error",
+        "unused-imports/no-unused-vars": [
+          "warn",
+          { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
+        ],
+        "no-empty": "warn"
+      }
+    }
+  ]
+}
