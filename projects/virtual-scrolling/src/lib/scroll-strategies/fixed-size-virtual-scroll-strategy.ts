@@ -1,11 +1,13 @@
 import {
   Directive,
-  EmbeddedViewRef, Inject,
-  inject,
+  EmbeddedViewRef,
+  Inject,
   Input,
-  NgIterable, NgModule,
+  NgIterable,
+  NgModule,
   OnChanges,
-  OnDestroy, Optional,
+  OnDestroy,
+  Optional,
   SimpleChanges,
 } from '@angular/core';
 import {
@@ -38,7 +40,8 @@ import {
   DEFAULT_ITEM_SIZE,
   DEFAULT_RUNWAY_ITEMS,
   DEFAULT_RUNWAY_ITEMS_OPPOSITE,
-  RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS, RxVirtualScrollDefaultOptions,
+  RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
+  RxVirtualScrollDefaultOptions,
 } from '../virtual-scroll.config';
 
 /**
@@ -55,7 +58,6 @@ import {
  * @publicApi
  */
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'rx-virtual-scroll-viewport[itemSize]',
   providers: [
     {
@@ -64,15 +66,13 @@ import {
     },
   ],
 })
-// eslint-disable-next-line @angular-eslint/directive-class-suffix
 export class FixedSizeVirtualScrollStrategy<
     T,
-    U extends NgIterable<T> = NgIterable<T>
+    U extends NgIterable<T> = NgIterable<T>,
   >
   extends RxVirtualScrollStrategy<T, U>
   implements OnChanges, OnDestroy
 {
-
   /**
    * @description
    * The size of the items in the virtually scrolled list
@@ -149,9 +149,12 @@ export class FixedSizeVirtualScrollStrategy<
   private readonly detached$ = new Subject<void>();
 
   constructor(
-    @Inject(RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS) @Optional()
-    private readonly defaults?: RxVirtualScrollDefaultOptions
-  ) {super();}
+    @Inject(RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS)
+    @Optional()
+    private readonly defaults?: RxVirtualScrollDefaultOptions,
+  ) {
+    super();
+  }
 
   /** @internal */
   ngOnChanges(changes: SimpleChanges) {
@@ -170,7 +173,7 @@ export class FixedSizeVirtualScrollStrategy<
 
   attach(
     viewport: RxVirtualScrollViewport,
-    viewRepeater: RxVirtualViewRepeater<T, U>
+    viewRepeater: RxVirtualViewRepeater<T, U>,
   ): void {
     this.viewport = viewport;
     this.viewRepeater = viewRepeater;
@@ -196,10 +199,10 @@ export class FixedSizeVirtualScrollStrategy<
               item,
               index,
             });
-          })
+          }),
         );
       }),
-      this.untilDetached$()
+      this.untilDetached$(),
     ).subscribe();
   }
 
@@ -210,12 +213,12 @@ export class FixedSizeVirtualScrollStrategy<
           (Array.isArray(values)
             ? values
             : values != null
-            ? Array.from(values)
-            : []
-          ).length
+              ? Array.from(values)
+              : []
+          ).length,
       ),
       distinctUntilChanged(),
-      tap((dataLength) => (this.contentSize = dataLength * this.itemSize))
+      tap((dataLength) => (this.contentSize = dataLength * this.itemSize)),
     );
     const onScroll$ = this.viewport!.elementScrolled$.pipe(
       // coalesceWith(unpatchedAnimationFrameTick()),
@@ -227,14 +230,14 @@ export class FixedSizeVirtualScrollStrategy<
             this.viewport!.getScrollTop(),
             this.viewportOffset,
             this._contentSize,
-            this.containerSize
+            this.containerSize,
           );
         this.direction =
           scrollTopWithOutOffset > this.scrollTopWithOutOffset ? 'down' : 'up';
         this.scrollTopWithOutOffset = scrollTopWithOutOffset;
         this.scrollTopAfterOffset = scrollTopAfterOffset;
         this.scrollTop = scrollTop;
-      })
+      }),
     );
     combineLatest([
       dataLengthChanged$,
@@ -243,7 +246,7 @@ export class FixedSizeVirtualScrollStrategy<
           this.containerSize = height;
           return height;
         }),
-        distinctUntilChanged()
+        distinctUntilChanged(),
       ),
       onScroll$,
       this.runwayStateChanged$.pipe(startWith(void 0)),
@@ -253,13 +256,13 @@ export class FixedSizeVirtualScrollStrategy<
           const containerSize = calculateVisibleContainerSize(
             this.containerSize,
             this.scrollTopWithOutOffset,
-            this.scrollTopAfterOffset
+            this.scrollTopAfterOffset,
           );
           const range: ListRange = { start: 0, end: 0 };
           if (this.direction === 'up') {
             range.start = Math.floor(
               Math.max(0, this.scrollTop - this.runwayItems * this.itemSize) /
-                this.itemSize
+                this.itemSize,
             );
             range.end = Math.min(
               length,
@@ -267,15 +270,15 @@ export class FixedSizeVirtualScrollStrategy<
                 (this.scrollTop +
                   containerSize +
                   this.runwayItemsOpposite * this.itemSize) /
-                  this.itemSize
-              )
+                  this.itemSize,
+              ),
             );
           } else {
             range.start = Math.floor(
               Math.max(
                 0,
-                this.scrollTop - this.runwayItemsOpposite * this.itemSize
-              ) / this.itemSize
+                this.scrollTop - this.runwayItemsOpposite * this.itemSize,
+              ) / this.itemSize,
             );
             range.end = Math.min(
               length,
@@ -283,8 +286,8 @@ export class FixedSizeVirtualScrollStrategy<
                 (this.scrollTop +
                   containerSize +
                   this.runwayItems * this.itemSize) /
-                  this.itemSize
-              )
+                  this.itemSize,
+              ),
             );
           }
           this.scrolledIndex = Math.floor(this.scrollTop / this.itemSize);
@@ -292,9 +295,9 @@ export class FixedSizeVirtualScrollStrategy<
         }),
         distinctUntilChanged(
           ({ start: prevStart, end: prevEnd }, { start, end }) =>
-            prevStart === start && prevEnd === end
+            prevStart === start && prevEnd === end,
         ),
-        this.untilDetached$()
+        this.untilDetached$(),
       )
       .subscribe((range) => (this.renderedRange = range));
   }
@@ -310,7 +313,7 @@ export class FixedSizeVirtualScrollStrategy<
 
   private _setViewPosition(
     view: EmbeddedViewRef<RxVirtualForViewContext<T, U>>,
-    scrollTop: number
+    scrollTop: number,
   ): void {
     const element = this.getElement(view);
     element.style.position = 'absolute';
@@ -320,6 +323,6 @@ export class FixedSizeVirtualScrollStrategy<
 
 @NgModule({
   declarations: [FixedSizeVirtualScrollStrategy],
-  exports: [FixedSizeVirtualScrollStrategy]
+  exports: [FixedSizeVirtualScrollStrategy],
 })
 export class FixedSizeVirtualScrollStrategyModule {}

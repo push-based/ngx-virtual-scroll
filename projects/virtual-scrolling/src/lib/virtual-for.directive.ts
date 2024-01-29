@@ -1,18 +1,15 @@
 import {
-  ChangeDetectorRef,
   Directive,
   DoCheck,
   EmbeddedViewRef,
   ErrorHandler,
   Inject,
-  inject,
   Input,
   IterableChanges,
   IterableDiffer,
   IterableDiffers,
   NgIterable,
   NgModule,
-  NgZone,
   OnDestroy,
   OnInit,
   Optional,
@@ -22,24 +19,19 @@ import {
 } from '@angular/core';
 import {
   isObservable,
-  MonoTypeOperatorFunction,
   NEVER,
   Observable,
   ReplaySubject,
   Subject,
   of,
   combineLatest,
-  concat,
 } from 'rxjs';
 import {
   shareReplay,
   switchMap,
   takeUntil,
   catchError,
-  distinctUntilChanged,
   map,
-  ignoreElements,
-  tap,
   switchAll,
 } from 'rxjs/operators';
 import { RxListViewComputedContext } from './list-view-context';
@@ -193,9 +185,6 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
 {
   /** @internal */
   private _differ?: IterableDiffer<T>;
-
-  /** @internal */
-  private partiallyFinished = false;
 
   /** @internal */
   private staticValue?: U;
@@ -546,16 +535,6 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
         const differ = this.getDiffer(iterable);
         let changes: IterableChanges<T> | null = null;
         if (differ) {
-          if (this.partiallyFinished) {
-            const currentIterable = [];
-            for (let i = 0, ilen = this.viewContainer.length; i < ilen; i++) {
-              const viewRef = <EmbeddedViewRef<RxVirtualForViewContext<T, U>>>(
-                this.viewContainer.get(i)
-              );
-              currentIterable[i] = viewRef.context.$implicit;
-            }
-            differ.diff(currentIterable);
-          }
           changes = differ.diff(iterable);
         }
         if (!changes) {
@@ -592,19 +571,11 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
         this.viewsRendered$.next(viewsRendered);
         return of(iterable);
       }),
-      this.handleError(),
+      catchError((err: Error) => {
+        this.errorHandler.handleError(err);
+        return of(null);
+      }),
     );
-  }
-
-  private handleError<T>(): MonoTypeOperatorFunction<T | null> {
-    return (o$) =>
-      o$.pipe(
-        catchError((err: Error) => {
-          this.partiallyFinished = false;
-          this.errorHandler.handleError(err);
-          return of(null);
-        }),
-      );
   }
 
   private getDiffer(values: NgIterable<T>): IterableDiffer<T> | null {

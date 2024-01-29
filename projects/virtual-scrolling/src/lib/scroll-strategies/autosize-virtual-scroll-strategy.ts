@@ -1,11 +1,13 @@
 import {
   Directive,
-  EmbeddedViewRef, Inject,
-  inject,
+  EmbeddedViewRef,
+  Inject,
   Input,
-  NgIterable, NgModule,
+  NgIterable,
+  NgModule,
   OnChanges,
-  OnDestroy, Optional, Self,
+  OnDestroy,
+  Optional,
   SimpleChanges,
 } from '@angular/core';
 import {
@@ -44,7 +46,10 @@ import {
   parseScrollTopBoundaries,
   unpatchedMicroTask,
 } from '../util';
-import { RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS, RxVirtualScrollDefaultOptions } from '../virtual-scroll.config';
+import {
+  RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
+  RxVirtualScrollDefaultOptions,
+} from '../virtual-scroll.config';
 import { RxaResizeObserver } from './resize-observer';
 
 /** @internal */
@@ -95,17 +100,16 @@ const defaultSizeExtract = (entry: ResizeObserverEntry) =>
       useExisting: AutoSizeVirtualScrollStrategy,
     },
     RxaResizeObserver,
-  ]
+  ],
 })
 // eslint-disable-next-line @angular-eslint/directive-class-suffix
 export class AutoSizeVirtualScrollStrategy<
     T,
-    U extends NgIterable<T> = NgIterable<T>
+    U extends NgIterable<T> = NgIterable<T>,
   >
   extends RxVirtualScrollStrategy<T, U>
   implements OnChanges, OnDestroy
 {
-
   /**
    * @description
    * The amount of items to render upfront in scroll direction
@@ -269,8 +273,9 @@ export class AutoSizeVirtualScrollStrategy<
 
   constructor(
     private resizeObserver: RxaResizeObserver,
-    @Inject(RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS) @Optional()
-    private readonly defaults?: RxVirtualScrollDefaultOptions
+    @Inject(RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS)
+    @Optional()
+    private readonly defaults?: RxVirtualScrollDefaultOptions,
   ) {
     super();
   }
@@ -297,7 +302,7 @@ export class AutoSizeVirtualScrollStrategy<
   /** @internal */
   attach(
     viewport: RxVirtualScrollViewport,
-    viewRepeater: RxVirtualViewRepeater<T, U>
+    viewRepeater: RxVirtualViewRepeater<T, U>,
   ): void {
     this.viewport = viewport;
     this.viewRepeater = viewRepeater;
@@ -343,7 +348,7 @@ export class AutoSizeVirtualScrollStrategy<
       map(({ width }) => width),
       distinctUntilChanged(),
       filter(() => this.renderedRange.end > 0 && this._virtualItems.length > 0),
-      this.until$()
+      this.until$(),
     ).subscribe(() => {
       // reset because we have no idea how items will behave
       let i = 0;
@@ -369,8 +374,8 @@ export class AutoSizeVirtualScrollStrategy<
         const dataArr = Array.isArray(values)
           ? values
           : values
-          ? Array.from(values)
-          : [];
+            ? Array.from(values)
+            : [];
         const existingIds = new Set<any>();
         let size = 0;
         const dataLength = dataArr.length;
@@ -414,7 +419,7 @@ export class AutoSizeVirtualScrollStrategy<
         this.contentLength = dataLength;
         this.contentSize = size;
       }),
-      finalize(() => itemCache.clear())
+      finalize(() => itemCache.clear()),
     ).subscribe();
   }
 
@@ -432,8 +437,8 @@ export class AutoSizeVirtualScrollStrategy<
             () =>
               this.renderedRange.end === 0 ||
               (this.scrollTop === this.anchorScrollTop &&
-                this._scrollToIndex === null)
-          )
+                this._scrollToIndex === null),
+          ),
         );
     combineLatest([
       this.viewport!.containerRect$.pipe(
@@ -442,7 +447,7 @@ export class AutoSizeVirtualScrollStrategy<
           return height;
         }),
         distinctUntilChanged(),
-        onlyTriggerWhenStable()
+        onlyTriggerWhenStable(),
       ),
       this.viewport!.elementScrolled$.pipe(
         startWith(void 0),
@@ -453,7 +458,7 @@ export class AutoSizeVirtualScrollStrategy<
               this.viewport!.getScrollTop(),
               this.viewportOffset,
               this._contentSize,
-              this.containerSize
+              this.containerSize,
             );
           this.direction =
             scrollTopWithOutOffset > this.scrollTopWithOutOffset
@@ -468,7 +473,7 @@ export class AutoSizeVirtualScrollStrategy<
           } else {
             removeScrollAnchorOnNextScroll = this._scrollToIndex !== null;
           }
-        })
+        }),
       ),
       this._contentSize$.pipe(distinctUntilChanged(), onlyTriggerWhenStable()),
       this.recalculateRange$.pipe(onlyTriggerWhenStable(), startWith(void 0)),
@@ -484,7 +489,7 @@ export class AutoSizeVirtualScrollStrategy<
           } else {
             this.anchorItem = this.calculateAnchoredItem(
               this.anchorItem,
-              delta
+              delta,
             );
           }
           this.anchorScrollTop = this.scrollTop;
@@ -494,34 +499,34 @@ export class AutoSizeVirtualScrollStrategy<
             calculateVisibleContainerSize(
               this.containerSize,
               this.scrollTopWithOutOffset,
-              this.scrollTopAfterOffset
-            )
+              this.scrollTopAfterOffset,
+            ),
           );
           if (this.direction === 'up') {
             range.start = Math.max(0, this.anchorItem.index - this.runwayItems);
             range.end = Math.min(
               this.contentLength,
-              this.lastScreenItem.index + this.runwayItemsOpposite
+              this.lastScreenItem.index + this.runwayItemsOpposite,
             );
           } else {
             range.start = Math.max(
               0,
-              this.anchorItem.index - this.runwayItemsOpposite
+              this.anchorItem.index - this.runwayItemsOpposite,
             );
             range.end = Math.min(
               this.contentLength,
-              this.lastScreenItem.index + this.runwayItems
+              this.lastScreenItem.index + this.runwayItems,
             );
           }
           return range;
-        })
+        }),
       )
       .pipe(
         distinctUntilChanged(
           ({ start: prevStart, end: prevEnd }, { start, end }) =>
-            prevStart === start && prevEnd === end
+            prevStart === start && prevEnd === end,
         ),
-        this.until$()
+        this.until$(),
       )
       .subscribe((range: ListRange) => (this.renderedRange = range));
   }
@@ -650,9 +655,9 @@ export class AutoSizeVirtualScrollStrategy<
                 this.maybeAdjustScrollPosition();
               }
             }
-          })
+          }),
         );
-      })
+      }),
     );
     const positionByResizeObserver$ = viewsToObserve$.pipe(
       groupBy((viewRef) => viewRef),
@@ -668,8 +673,8 @@ export class AutoSizeVirtualScrollStrategy<
                   this._virtualItems[viewRef.context.index].position =
                     undefined;
                 }
-              })
-            )
+              }),
+            ),
           ),
           tap(([index, viewIndex]) => {
             this.calcAnchorScrollTop();
@@ -700,9 +705,9 @@ export class AutoSizeVirtualScrollStrategy<
               viewIdx++;
             }
             this.maybeAdjustScrollPosition();
-          })
-        )
-      )
+          }),
+        ),
+      ),
     );
     merge(positionByIterableChange$, positionByResizeObserver$)
       .pipe(this.until$())
@@ -720,7 +725,7 @@ export class AutoSizeVirtualScrollStrategy<
 
   /** @internal */
   private observeViewSize$(
-    viewRef: EmbeddedViewRef<RxVirtualForViewContext<T, U>>
+    viewRef: EmbeddedViewRef<RxVirtualForViewContext<T, U>>,
   ) {
     const element = this.getElement(viewRef);
     return this.resizeObserver
@@ -743,12 +748,12 @@ export class AutoSizeVirtualScrollStrategy<
           (diff) =>
             diff !== null &&
             diff[0] >= this.positionedRange.start &&
-            diff[0] < this.positionedRange.end
+            diff[0] < this.positionedRange.end,
         ),
         takeUntil(
           merge(
             this.viewRepeater!.viewRendered$,
-            this.viewRepeater!.renderingStart$
+            this.viewRepeater!.renderingStart$,
           ).pipe(
             tap(() => {
               // we need to clean up the position property for views
@@ -763,10 +768,10 @@ export class AutoSizeVirtualScrollStrategy<
               }
             }),
             filter(
-              () => this.viewRepeater!.viewContainer.indexOf(viewRef) === -1
-            )
-          )
-        )
+              () => this.viewRepeater!.viewContainer.indexOf(viewRef) === -1,
+            ),
+          ),
+        ),
       );
   }
 
@@ -777,7 +782,7 @@ export class AutoSizeVirtualScrollStrategy<
    */
   private calculateAnchoredItem(
     initialAnchor: AnchorItem,
-    delta: number
+    delta: number,
   ): AnchorItem {
     if (delta === 0) return initialAnchor;
     delta += initialAnchor.offset;
@@ -873,7 +878,7 @@ export class AutoSizeVirtualScrollStrategy<
 
   /** @internal */
   private getViewRef(
-    index: number
+    index: number,
   ): EmbeddedViewRef<RxVirtualForViewContext<T, U>> {
     return <EmbeddedViewRef<RxVirtualForViewContext<T, U>>>(
       this.viewRepeater!.viewContainer.get(index)!
@@ -883,7 +888,7 @@ export class AutoSizeVirtualScrollStrategy<
   /** @internal */
   private updateElementSize(
     view: EmbeddedViewRef<any>,
-    index: number
+    index: number,
   ): [number, number] {
     const oldSize = this.getItemSize(index);
     const isCached = this._virtualItems[index].cached;
@@ -918,7 +923,7 @@ export class AutoSizeVirtualScrollStrategy<
     ) {
       scrollElement.classList.toggle(
         'rx-virtual-scroll-element--withSyncScrollbar',
-        force
+        force,
       );
     }
   }
@@ -926,6 +931,6 @@ export class AutoSizeVirtualScrollStrategy<
 
 @NgModule({
   declarations: [AutoSizeVirtualScrollStrategy],
-  exports: [AutoSizeVirtualScrollStrategy]
+  exports: [AutoSizeVirtualScrollStrategy],
 })
 export class AutoSizeVirtualScrollStrategyModule {}
