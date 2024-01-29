@@ -1,0 +1,28 @@
+import { Directive, ElementRef, inject } from '@angular/core';
+import { RxVirtualScrollElement } from './model';
+import { unpatchedScroll } from './util';
+
+@Directive({
+  selector: '[rxVirtualScrollElement]',
+  providers: [
+    {
+      provide: RxVirtualScrollElement,
+      useExisting: RxVirtualScrollElementDirective,
+    },
+  ],
+  host: {
+    class: 'rx-virtual-scroll-element',
+  },
+})
+export class RxVirtualScrollElementDirective implements RxVirtualScrollElement {
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  readonly elementScrolled$ = unpatchedScroll(this.elementRef.nativeElement);
+
+  getElementRef(): ElementRef<HTMLElement> {
+    return this.elementRef;
+  }
+  measureOffset(): number {
+    return this.elementRef.nativeElement.getBoundingClientRect().top;
+  }
+}
