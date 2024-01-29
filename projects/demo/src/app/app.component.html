@@ -1,0 +1,37 @@
+<div class="nav" [class.nav--open]="navOpen">
+  <h3>Virtual Scrolling Demos</h3>
+  <a
+    class="nav-item"
+    [routerLink]="['']"
+    [routerLinkActive]="'active'"
+    [routerLinkActiveOptions]="{exact: true}"
+  >blank</a>
+  <h3>RXA</h3>
+  <a
+    class="nav-item"
+    [routerLink]="['rxa/fixed-size']"
+    [routerLinkActive]="'active'"
+  >Fixed Size</a
+  >
+  <a
+    class="nav-item"
+    [routerLink]="['rxa/dynamic-size']"
+    [routerLinkActive]="'active'"
+  >Dynamic Size</a
+  >
+  <a
+    class="nav-item"
+    [routerLink]="['rxa/autosize']"
+    [routerLinkActive]="'active'"
+  >Autosize</a
+  >
+</div>
+<div class="content" (mousedown)="closeNavIfOpen($event)">
+  <button
+    class="nav-toggle"
+    (click)="$event.stopPropagation(); navOpen = !navOpen"
+  >
+    ☰
+  </button>
+  <router-outlet></router-outlet>
+</div>
