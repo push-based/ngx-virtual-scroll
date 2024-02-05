@@ -5,11 +5,10 @@ import {
   ErrorHandler,
   Inject,
   Input,
-  IterableChanges,
   IterableDiffer,
-  IterableDiffers,
   NgIterable,
   NgModule,
+  NgZone,
   OnDestroy,
   OnInit,
   Optional,
@@ -19,7 +18,6 @@ import {
 } from '@angular/core';
 import {
   isObservable,
-  NEVER,
   Observable,
   ReplaySubject,
   Subject,
@@ -42,11 +40,9 @@ import {
   RxVirtualScrollStrategy,
   RxVirtualViewRepeater,
 } from './model';
+import { reconcile } from './reconciliation/list-reconciliation';
+import { LiveCollectionLContainerImpl } from './reconciliation/rx-live-collection';
 import { coerceObservable } from './util';
-import {
-  createVirtualListTemplateManager,
-  RxVirtualListTemplateManager,
-} from './virtual-list-template-manager';
 import {
   DEFAULT_TEMPLATE_CACHE_SIZE,
   RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
@@ -242,37 +238,6 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
   @Input('rxVirtualForTemplateCacheSize') templateCacheSize =
     this.defaults?.templateCacheSize || DEFAULT_TEMPLATE_CACHE_SIZE;
 
-  /**
-   * @description
-   * A flag to control whether `*rxVirtualFor` rendering happens within
-   * `NgZone` or not. The default value is set to `true` if not configured otherwise.
-   * If `patchZone` is set to `false` `*rxVirtualFor` will operate completely outside of `NgZone`.
-   *
-   * @example
-   * \@Component({
-   *   selector: 'app-root',
-   *   template: `
-   *    <rx-virtual-scroll-viewport>
-   *      <app-list-item
-   *        *rxVirtualFor="
-   *          let item of items$;
-   *          trackBy: trackItem;
-   *          patchZone: false;
-   *        "
-   *        [item]="item"
-   *        autosized
-   *      ></app-list-item>
-   *    </rx-virtual-scroll-viewport>
-   *   `
-   * })
-   * export class AppComponent {
-   *   items$ = itemService.getItems();
-   * }
-   *
-   * @param patchZone
-   */
-  @Input('rxVirtualForPatchZone') patchZone = true;
-
   /*@Input('rxVirtualForTombstone') tombstone: TemplateRef<
    RxVirtualForViewContext<T>
    > | null = null;*/
@@ -450,13 +415,9 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
   private values?: NgIterable<T> | null | undefined;
 
   /** @internal */
-  private templateManager!: RxVirtualListTemplateManager<
-    T,
-    RxVirtualForViewContext<T, U>
-  >;
-
-  /** @internal */
   private _destroy$ = new Subject<void>();
+
+  private liveCollection?: LiveCollectionLContainerImpl;
 
   /** @internal */
   _trackBy: TrackByFunction<T> | null = null;
@@ -475,8 +436,8 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
 
   constructor(
     private readonly scrollStrategy: RxVirtualScrollStrategy<T, U>,
-    private readonly iterableDiffers: IterableDiffers,
     private readonly templateRef: TemplateRef<RxVirtualForViewContext<T, U>>,
+    private readonly ngZone: NgZone,
     readonly viewContainer: ViewContainerRef,
     private readonly errorHandler: ErrorHandler,
     @Inject(RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS)
@@ -489,18 +450,13 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
     this.values$.pipe(takeUntil(this._destroy$)).subscribe((values) => {
       this.values = values;
     });
-    this.templateManager = createVirtualListTemplateManager({
-      viewContainerRef: this.viewContainer,
-      templateRef: this.template,
-      createViewContext: this.createViewContext.bind(this),
-      updateViewContext: this.updateViewContext.bind(this),
-      templateCacheSize: this.templateCacheSize,
+    Promise.resolve().then(() => {
+      this.render()
+        .pipe(takeUntil(this._destroy$))
+        .subscribe((v) => {
+          this._renderCallback?.next(v as U);
+        });
     });
-    this.render()
-      .pipe(takeUntil(this._destroy$))
-      .subscribe((v) => {
-        this._renderCallback?.next(v as U);
-      });
   }
 
   /** @internal */
@@ -513,10 +469,14 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
   /** @internal */
   ngOnDestroy() {
     this._destroy$.next();
-    this.templateManager.detach();
   }
 
   private render() {
+    const liveCollection = new LiveCollectionLContainerImpl(
+      this.viewContainer,
+      this.template,
+      this.templateCacheSize,
+    );
     return combineLatest<[T[], ListRange]>([
       this.values$.pipe(
         map((values) =>
@@ -531,45 +491,43 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
     ]).pipe(
       // map iterable to latest diff
       switchMap(([items, range]) => {
-        const iterable = items.slice(range.start, range.end);
-        const differ = this.getDiffer(iterable);
-        let changes: IterableChanges<T> | null = null;
-        if (differ) {
-          changes = differ.diff(iterable);
-        }
-        if (!changes) {
-          return NEVER;
-        }
-        const listChanges = this.templateManager.getListChanges(
-          changes,
-          iterable,
-          items.length,
-          range.start,
-        );
-        const updates = listChanges[0].sort((a, b) => a[0] - b[0]);
-        const indicesToPosition = new Set<number>();
-        for (let i = 0; i < updates.length; i++) {
-          const [index, , removed] = updates[i];
-          if (!removed) {
-            indicesToPosition.add(index);
+        return this.ngZone.run(() => {
+          const iterable = items.slice(range.start, range.end);
+          liveCollection.reset();
+          liveCollection.setStartRange(range.start);
+          reconcile(
+            liveCollection,
+            iterable,
+            this._trackBy as TrackByFunction<unknown>,
+          );
+          liveCollection.updateIndexes();
+          const updates = Array.from(liveCollection.viewsUpdated).sort(
+            (a, b) => a[1] - b[1],
+          );
+          const indicesToPosition = new Set(
+            Array.from(liveCollection.updatedIndices).sort(),
+          );
+          this.renderingStart$.next(indicesToPosition);
+          const viewsRendered = new Array<
+            EmbeddedViewRef<RxVirtualForViewContext<T, U>>
+          >(indicesToPosition.size);
+          for (let i = 0; i < updates.length; i++) {
+            const [view, index] = updates[i];
+            view.detectChanges();
+            if (index !== -1) {
+              this.viewRendered$.next({
+                view,
+                index,
+                item: view.context.$implicit,
+              } as any);
+              viewsRendered.push(view as any);
+            }
           }
-        }
 
-        this.renderingStart$.next(indicesToPosition);
-        const viewsRendered = new Array<
-          EmbeddedViewRef<RxVirtualForViewContext<T, U>>
-        >(indicesToPosition.size);
-        for (let i = 0; i < updates.length; i++) {
-          const [index, work] = updates[i];
-          const result = work();
-          if (result.view) {
-            this.viewRendered$.next(result as any);
-            viewsRendered.push(result.view);
-          }
-        }
-        this.templateManager.setItemCount(items.length);
-        this.viewsRendered$.next(viewsRendered);
-        return of(iterable);
+          // this.templateManager.setItemCount(items.length);
+          this.viewsRendered$.next(viewsRendered);
+          return of(iterable);
+        });
       }),
       catchError((err: Error) => {
         this.errorHandler.handleError(err);
@@ -578,25 +536,12 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
     );
   }
 
-  private getDiffer(values: NgIterable<T>): IterableDiffer<T> | null {
-    if (this._differ) {
-      return this._differ;
-    }
-    return values
-      ? (this._differ = this.iterableDiffers.find(values).create(this._trackBy))
-      : null;
-  }
-
   /** @internal */
   private createViewContext(
     item: T,
     computedContext: RxListViewComputedContext,
   ): RxVirtualForViewContext<T, U, RxListViewComputedContext> {
-    return new RxVirtualForViewContext(
-      item,
-      this.values! as U,
-      computedContext,
-    );
+    return new RxVirtualForViewContext(item, this.values as U, computedContext);
   }
 
   /** @internal */
@@ -607,9 +552,9 @@ export class RxVirtualFor<T, U extends NgIterable<T> = NgIterable<T>>
     >,
     computedContext?: RxListViewComputedContext,
   ): void {
-    view.context.updateContext(computedContext!);
+    view.context.updateContext(computedContext);
     view.context.$implicit = item;
-    view.context.rxVirtualForOf = this.values! as U;
+    view.context.rxVirtualForOf = this.values as U;
   }
 }
 

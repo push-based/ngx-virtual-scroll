@@ -502,11 +502,14 @@ export class AutoSizeVirtualScrollStrategy<
               this.scrollTopAfterOffset,
             ),
           );
+          const addIndexAtEnd = this.lastScreenItem.offset > 0 ? 1 : 0;
           if (this.direction === 'up') {
             range.start = Math.max(0, this.anchorItem.index - this.runwayItems);
             range.end = Math.min(
               this.contentLength,
-              this.lastScreenItem.index + this.runwayItemsOpposite,
+              this.lastScreenItem.index +
+                this.runwayItemsOpposite +
+                addIndexAtEnd,
             );
           } else {
             range.start = Math.max(
@@ -515,7 +518,7 @@ export class AutoSizeVirtualScrollStrategy<
             );
             range.end = Math.min(
               this.contentLength,
-              this.lastScreenItem.index + this.runwayItems,
+              this.lastScreenItem.index + this.runwayItems + addIndexAtEnd,
             );
           }
           return range;
