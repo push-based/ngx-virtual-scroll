@@ -28,6 +28,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
           [runwayItemsOpposite]="state.runwayItemsOpposite"
           [withSyncScrollbar]="stableScrollbar"
           [tombstoneSize]="100"
+          [initialScrollIndex]="demoPanel.initialScrollTo"
           autosize
           #viewport
         >
@@ -40,6 +41,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
               trackBy: state.dataService.trackItem;
               let i = index
             "
+            [index]="i"
             (update)="state.dataService.updateItem(item)"
             (remove)="state.dataService.removeItem(item)"
             (moveDown)="state.dataService.moveItem(item, i, i + 1)"

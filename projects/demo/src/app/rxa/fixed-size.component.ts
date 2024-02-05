@@ -25,9 +25,11 @@ import { DemoComponentState } from '../shared/demo-component.state';
           [runwayItemsOpposite]="state.runwayItemsOpposite"
           [runwayItems]="state.runwayItems"
           [itemSize]="100"
+          [initialScrollIndex]="demoPanel.initialScrollTo"
         >
           <item
             class="fixed-size"
+            [index]="i"
             *rxVirtualFor="
               let item of state.dataService.items$;
               trackBy: state.dataService.trackItem;

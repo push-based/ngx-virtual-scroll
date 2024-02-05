@@ -76,14 +76,7 @@ import { DataService } from '../data.service';
               </td>
             </tr>
             <tr>
-              <td>
-                Scroll To
-                <span
-                  title="This is probably not working correctly and should not be used in production"
-                  *ngIf="scrollToExperimental"
-                  >⚠️</span
-                >
-              </td>
+              <td>Scroll To</td>
               <td>
                 <input type="number" min="0" step="1" #scrollToInput />
                 <button
@@ -91,6 +84,21 @@ import { DataService } from '../data.service';
                 >
                   Scroll
                 </button>
+              </td>
+            </tr>
+            <tr>
+              <td>Initial ScrollTo</td>
+              <td>
+                <input
+                  type="number"
+                  [value]="initialScrollTo"
+                  (change)="
+                    setInitialScrollTo(initialScrollToInput.valueAsNumber)
+                  "
+                  min="0"
+                  step="1"
+                  #initialScrollToInput
+                />
               </td>
             </tr>
             <tr *ngIf="withStableScrollbar">
@@ -206,7 +214,14 @@ export class DemoPanelComponent {
   @Input() runwayItems = 20;
   @Output() runwayItemsChange = new EventEmitter<number>();
 
+  initialScrollTo = parseInt(localStorage.getItem('rx-initial-scroll-idx'));
+
   constructor(public dataService: DataService) {}
+
+  setInitialScrollTo(scrollTo: number) {
+    localStorage.setItem('rx-initial-scroll-idx', scrollTo.toString());
+    this.initialScrollTo = scrollTo;
+  }
 }
 
 @NgModule({

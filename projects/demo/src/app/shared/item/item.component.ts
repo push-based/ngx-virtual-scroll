@@ -19,7 +19,7 @@ import { Item } from '../data.service';
         <img [src]="item.image" loading="lazy" />
       </div>
       <div class="item__user">{{ item.user }}</div>
-      <div class="item__content">{{ item.content }}</div>
+      <div class="item__content">index: {{ index }} - {{ item.content }}</div>
       <div>
         <mat-icon
           [color]="item.status === 'block' ? 'warn' : 'accent'"
@@ -56,6 +56,7 @@ export class ItemComponent implements OnChanges {
 
   @Input() item: Item;
   @Input() work = 0;
+  @Input() index = 0;
 
   @Output() update = new EventEmitter<void>();
   @Output() remove = new EventEmitter<void>();
