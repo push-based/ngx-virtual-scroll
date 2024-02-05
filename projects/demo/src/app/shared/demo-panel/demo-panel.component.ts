@@ -128,7 +128,7 @@ import { DataService } from '../data.service';
                   max="100000"
                 />
                 <button (click)="dataService.init(amountInput.valueAsNumber)">
-                  Add
+                  Set
                 </button>
               </td>
             </tr>

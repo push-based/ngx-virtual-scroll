@@ -154,19 +154,24 @@ button {
   }
 
   .item {
-    display: grid;
-    grid:
+    display: block;
+    width: 100%;
+    .item-grid {
+      display: grid;
+      height: 100%;
+      grid:
       'check    img     user     content     status      date'
       'desc     desc    desc     desc        desc        desc'
       'actions  actions actions  actions     actions     actions' /
       50px 50px 150px 1fr 52px 100px;
-    grid-column-gap: 14px;
-    box-sizing: border-box;
-    border: 1px solid gray;
-    width: 100%;
-    padding: 0.5rem;
-    contain: content;
-    align-items: center;
+      grid-column-gap: 14px;
+      box-sizing: border-box;
+      border: 1px solid gray;
+      width: 100%;
+      padding: 0.5rem;
+      contain: content;
+      align-items: center;
+    }
 
     /*&:has(.item__image:hover) {
       contain: unset;

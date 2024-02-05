@@ -13,34 +13,36 @@ import { Item } from '../data.service';
 @Component({
   selector: 'item',
   template: `
-    <mat-checkbox (change)="checked = $event.checked"></mat-checkbox>
-    <div class="item__image">
-      <img [src]="item.image" loading="lazy" />
-    </div>
-    <div class="item__user">{{ item.user }}</div>
-    <div class="item__content">{{ item.content }}</div>
-    <div>
-      <mat-icon
-        [color]="item.status === 'block' ? 'warn' : 'accent'"
-        [matTooltip]="item.status"
-        >{{ item.status }}</mat-icon
-      >
-    </div>
-    <div class="item__date">{{ item.date | date }}</div>
-    <ng-content></ng-content>
-    <div class="item__actions">
-      <button mat-button color="primary" (click)="update.emit()">
-        <mat-icon>update</mat-icon>
-        Update
-      </button>
-      <button mat-button color="primary" (click)="moveDown.emit()">
-        <mat-icon>move_down</mat-icon>
-        Move Down
-      </button>
-      <button mat-button color="warn" (click)="remove.emit()">
-        <mat-icon>delete</mat-icon>
-        Remove
-      </button>
+    <div class="item-grid">
+      <mat-checkbox (change)="checked = $event.checked"></mat-checkbox>
+      <div class="item__image">
+        <img [src]="item.image" loading="lazy" />
+      </div>
+      <div class="item__user">{{ item.user }}</div>
+      <div class="item__content">{{ item.content }}</div>
+      <div>
+        <mat-icon
+          [color]="item.status === 'block' ? 'warn' : 'accent'"
+          [matTooltip]="item.status"
+          >{{ item.status }}</mat-icon
+        >
+      </div>
+      <div class="item__date">{{ item.date | date }}</div>
+      <ng-content></ng-content>
+      <div class="item__actions">
+        <button mat-button color="primary" (click)="update.emit()">
+          <mat-icon>update</mat-icon>
+          Update
+        </button>
+        <button mat-button color="primary" (click)="moveDown.emit()">
+          <mat-icon>move_down</mat-icon>
+          Move Down
+        </button>
+        <button mat-button color="warn" (click)="remove.emit()">
+          <mat-icon>delete</mat-icon>
+          Remove
+        </button>
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
