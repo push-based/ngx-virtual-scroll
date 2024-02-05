@@ -2,32 +2,11 @@ import {
   Directive,
   ElementRef,
   EmbeddedViewRef,
-  NgIterable,
-  TemplateRef,
   TrackByFunction,
   ViewContainerRef,
 } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { RxDefaultListViewContext } from './list-view-context';
-
-type CreateViewContext<Implicit, Context, ComputedContext> = (
-  value: Implicit,
-  computedContext: ComputedContext,
-) => Context;
-
-type UpdateViewContext<Implicit, Context, ComputedContext> = (
-  value: Implicit,
-  view: EmbeddedViewRef<Context>,
-  computedContext?: ComputedContext,
-) => void;
-
-export interface TemplateSettings<Implicit, Context, ComputedContext> {
-  viewContainerRef: ViewContainerRef;
-  templateRef: TemplateRef<Context>;
-  createViewContext: CreateViewContext<Implicit, Context, ComputedContext>;
-  updateViewContext: UpdateViewContext<Implicit, Context, ComputedContext>;
-  templateCacheSize: number;
-}
+import { RxVirtualForViewContext } from './list-view-context';
 
 export interface ListRange {
   start: number;
@@ -50,10 +29,7 @@ export interface ListRange {
  * @publicApi
  */
 @Directive()
-export abstract class RxVirtualScrollStrategy<
-  T,
-  U extends NgIterable<T> = NgIterable<T>,
-> {
+export abstract class RxVirtualScrollStrategy<T> {
   /** Emits when the index of the first element visible in the viewport changes. */
   /** @internal */
   abstract scrolledIndex$: Observable<number>;
@@ -68,7 +44,7 @@ export abstract class RxVirtualScrollStrategy<
    * Emits whenever an update to a single view was rendered
    */
   readonly viewRenderCallback = new Subject<{
-    view: EmbeddedViewRef<RxVirtualForViewContext<T, U>>;
+    view: EmbeddedViewRef<RxVirtualForViewContext<T>>;
     item: T;
     index: number;
   }>();
@@ -78,7 +54,7 @@ export abstract class RxVirtualScrollStrategy<
 
   /** @internal */
   protected getElement(
-    view: EmbeddedViewRef<RxVirtualForViewContext<T, U>>,
+    view: EmbeddedViewRef<RxVirtualForViewContext<T>>,
   ): HTMLElement {
     if (this.nodeIndex !== undefined) {
       return view.rootNodes[this.nodeIndex];
@@ -122,38 +98,19 @@ export abstract class RxVirtualScrollViewport {
 
 /** @internal */
 @Directive()
-export abstract class RxVirtualViewRepeater<
-  T,
-  U extends NgIterable<T> = NgIterable<T>,
-> {
-  abstract values$: Observable<U | null | undefined>;
+export abstract class RxVirtualViewRepeater<T> {
+  abstract values$: Observable<Array<T> | null | undefined>;
   abstract viewsRendered$: Observable<
-    EmbeddedViewRef<RxVirtualForViewContext<T, U>>[]
+    EmbeddedViewRef<RxVirtualForViewContext<T>>[]
   >;
   abstract viewRendered$: Observable<{
-    view: EmbeddedViewRef<RxVirtualForViewContext<T, U>>;
+    view: EmbeddedViewRef<RxVirtualForViewContext<T>>;
     index: number;
     item: T;
   }>;
   abstract viewContainer: ViewContainerRef;
   abstract renderingStart$: Observable<Set<number>>;
   _trackBy: TrackByFunction<T> | null;
-}
-
-/** @internal */
-export class RxVirtualForViewContext<
-  T,
-  U extends NgIterable<T> = NgIterable<T>,
-  C extends { count: number; index: number } = { count: number; index: number },
-  K = keyof T,
-> extends RxDefaultListViewContext<T, U, K> {
-  constructor(
-    item: T,
-    public rxVirtualForOf: U,
-    customProps?: C,
-  ) {
-    super(item, customProps);
-  }
 }
 
 @Directive()

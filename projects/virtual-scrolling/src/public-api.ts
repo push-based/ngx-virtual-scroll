@@ -1,11 +1,11 @@
 export {
   ListRange,
-  RxVirtualForViewContext,
   RxVirtualScrollStrategy,
   RxVirtualViewRepeater,
   RxVirtualScrollViewport,
   RxVirtualScrollElement,
 } from './lib/model';
+export { RxVirtualForViewContext } from './lib/list-view-context';
 export * from './lib/scroll-strategies/autosize-virtual-scroll-strategy';
 export * from './lib/scroll-strategies/fixed-size-virtual-scroll-strategy';
 export * from './lib/virtual-for.directive';

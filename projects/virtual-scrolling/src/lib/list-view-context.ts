@@ -1,69 +1,27 @@
-import { NgIterable } from '@angular/core';
-
-export interface RxListViewComputedContext {
-  index: number;
-  count: number;
-}
-
-export interface RxListViewContext<T, U = RxListViewComputedContext>
-  extends RxListViewComputedContext {
+export class RxVirtualForViewContext<T> {
   $implicit: T;
-  updateContext(newProps: Partial<U>): void;
-}
-
-export class RxDefaultListViewContext<
-  T,
-  U extends NgIterable<T> = NgIterable<T>,
-  K = keyof T,
-> implements RxListViewContext<T>
-{
-  private _$implicit: T;
-
-  private context: RxListViewComputedContext = {
-    count: -1,
-    index: -1,
-  };
-
-  set $implicit($implicit: T) {
-    this._$implicit = $implicit;
-  }
-
-  get $implicit(): T {
-    return this._$implicit;
-  }
-
-  get index(): number {
-    return this.context.index;
-  }
-
-  get count(): number {
-    return this.context.count;
-  }
 
   get first(): boolean {
-    return this.context.index === 0;
+    return this.index === 0;
   }
 
   get last(): boolean {
-    return this.context.index === this.context.count - 1;
+    return this.index === this.count - 1;
   }
 
   get even(): boolean {
-    return this.context.index % 2 === 0;
+    return this.index % 2 === 0;
   }
 
   get odd(): boolean {
     return !this.even;
   }
 
-  constructor(item: T, customProps?: { count: number; index: number }) {
+  constructor(
+    item: T,
+    public index: number,
+    public count: number,
+  ) {
     this.$implicit = item;
-    if (customProps) {
-      this.updateContext(customProps);
-    }
-  }
-
-  updateContext(newProps: RxListViewComputedContext): void {
-    this.context = newProps;
   }
 }

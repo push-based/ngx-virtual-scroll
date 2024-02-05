@@ -3,7 +3,6 @@ import {
   EmbeddedViewRef,
   Inject,
   Input,
-  NgIterable,
   NgModule,
   OnChanges,
   OnDestroy,
@@ -24,10 +23,10 @@ import {
   takeUntil,
   tap,
 } from 'rxjs/operators';
+import { RxVirtualForViewContext } from '../list-view-context';
 
 import {
   ListRange,
-  RxVirtualForViewContext,
   RxVirtualScrollStrategy,
   RxVirtualScrollViewport,
   RxVirtualViewRepeater,
@@ -66,11 +65,8 @@ import {
     },
   ],
 })
-export class FixedSizeVirtualScrollStrategy<
-    T,
-    U extends NgIterable<T> = NgIterable<T>,
-  >
-  extends RxVirtualScrollStrategy<T, U>
+export class FixedSizeVirtualScrollStrategy<T>
+  extends RxVirtualScrollStrategy<T>
   implements OnChanges, OnDestroy
 {
   /**
@@ -106,7 +102,7 @@ export class FixedSizeVirtualScrollStrategy<
   private readonly runwayStateChanged$ = new Subject<void>();
 
   private viewport: RxVirtualScrollViewport | null = null;
-  private viewRepeater: RxVirtualViewRepeater<T, U> | null = null;
+  private viewRepeater: RxVirtualViewRepeater<T> | null = null;
 
   private readonly _scrolledIndex$ = new ReplaySubject<number>(1);
   readonly scrolledIndex$ = this._scrolledIndex$.pipe(distinctUntilChanged());
@@ -173,7 +169,7 @@ export class FixedSizeVirtualScrollStrategy<
 
   attach(
     viewport: RxVirtualScrollViewport,
-    viewRepeater: RxVirtualViewRepeater<T, U>,
+    viewRepeater: RxVirtualViewRepeater<T>,
   ): void {
     this.viewport = viewport;
     this.viewRepeater = viewRepeater;
@@ -312,7 +308,7 @@ export class FixedSizeVirtualScrollStrategy<
   }
 
   private _setViewPosition(
-    view: EmbeddedViewRef<RxVirtualForViewContext<T, U>>,
+    view: EmbeddedViewRef<RxVirtualForViewContext<T>>,
     scrollTop: number,
   ): void {
     const element = this.getElement(view);

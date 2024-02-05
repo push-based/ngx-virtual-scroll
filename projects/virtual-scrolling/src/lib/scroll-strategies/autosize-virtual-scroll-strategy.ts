@@ -3,7 +3,6 @@ import {
   EmbeddedViewRef,
   Inject,
   Input,
-  NgIterable,
   NgModule,
   OnChanges,
   OnDestroy,
@@ -33,10 +32,10 @@ import {
   takeWhile,
   tap,
 } from 'rxjs/operators';
+import { RxVirtualForViewContext } from '../list-view-context';
 
 import {
   ListRange,
-  RxVirtualForViewContext,
   RxVirtualScrollStrategy,
   RxVirtualScrollViewport,
   RxVirtualViewRepeater,
@@ -92,7 +91,6 @@ const defaultSizeExtract = (entry: ResizeObserverEntry) =>
  * @publicApi
  */
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: 'rx-virtual-scroll-viewport[autosize]',
   providers: [
     {
@@ -102,12 +100,8 @@ const defaultSizeExtract = (entry: ResizeObserverEntry) =>
     RxaResizeObserver,
   ],
 })
-// eslint-disable-next-line @angular-eslint/directive-class-suffix
-export class AutoSizeVirtualScrollStrategy<
-    T,
-    U extends NgIterable<T> = NgIterable<T>,
-  >
-  extends RxVirtualScrollStrategy<T, U>
+export class AutoSizeVirtualScrollStrategy<T>
+  extends RxVirtualScrollStrategy<T>
   implements OnChanges, OnDestroy
 {
   /**
@@ -166,7 +160,7 @@ export class AutoSizeVirtualScrollStrategy<
   /** @internal */
   private viewport: RxVirtualScrollViewport | null = null;
   /** @internal */
-  private viewRepeater: RxVirtualViewRepeater<T, U> | null = null;
+  private viewRepeater: RxVirtualViewRepeater<T> | null = null;
 
   /** @internal */
   private readonly _contentSize$ = new ReplaySubject<number>(1);
@@ -302,7 +296,7 @@ export class AutoSizeVirtualScrollStrategy<
   /** @internal */
   attach(
     viewport: RxVirtualScrollViewport,
-    viewRepeater: RxVirtualViewRepeater<T, U>,
+    viewRepeater: RxVirtualViewRepeater<T>,
   ): void {
     this.viewport = viewport;
     this.viewRepeater = viewRepeater;
@@ -371,28 +365,23 @@ export class AutoSizeVirtualScrollStrategy<
     this.viewRepeater!.values$.pipe(
       this.until$(),
       tap((values) => {
-        const dataArr = Array.isArray(values)
-          ? values
-          : values
-            ? Array.from(values)
-            : [];
         const existingIds = new Set<any>();
         let size = 0;
-        const dataLength = dataArr.length;
+        const dataLength = values.length;
         const virtualItems = new Array<VirtualViewItem>(dataLength);
         for (let i = 0; i < dataLength; i++) {
-          const item = dataArr[i];
+          const item = values[i];
           const id = trackBy(i, item);
           const cachedItem = itemCache.get(id);
           if (cachedItem === undefined) {
             // add
             virtualItems[i] = { size: 0 };
-            itemCache.set(id, { item: dataArr[i], index: i });
+            itemCache.set(id, { item: values[i], index: i });
           } else if (cachedItem.index !== i) {
             // move
             virtualItems[i] = this._virtualItems[cachedItem.index];
             virtualItems[i].position = undefined;
-            itemCache.set(id, { item: dataArr[i], index: i });
+            itemCache.set(id, { item: values[i], index: i });
           } else {
             // update
             // todo: properly determine update (Object.is?)
@@ -401,7 +390,7 @@ export class AutoSizeVirtualScrollStrategy<
             if (i < this.renderedRange.start || i >= this.renderedRange.end) {
               virtualItems[i].cached = false;
             }
-            itemCache.set(id, { item: dataArr[i], index: i });
+            itemCache.set(id, { item: values[i], index: i });
           }
           existingIds.add(id);
           size += virtualItems[i].size || this.tombstoneSize;
@@ -541,7 +530,7 @@ export class AutoSizeVirtualScrollStrategy<
    */
   private positionElements(): void {
     const viewsToObserve$ = new Subject<
-      EmbeddedViewRef<RxVirtualForViewContext<T, U>>
+      EmbeddedViewRef<RxVirtualForViewContext<T>>
     >();
     const positionByIterableChange$ = this.viewRepeater!.renderingStart$.pipe(
       switchMap((batchedUpdates) => {
@@ -728,7 +717,7 @@ export class AutoSizeVirtualScrollStrategy<
 
   /** @internal */
   private observeViewSize$(
-    viewRef: EmbeddedViewRef<RxVirtualForViewContext<T, U>>,
+    viewRef: EmbeddedViewRef<RxVirtualForViewContext<T>>,
   ) {
     const element = this.getElement(viewRef);
     return this.resizeObserver
@@ -882,8 +871,8 @@ export class AutoSizeVirtualScrollStrategy<
   /** @internal */
   private getViewRef(
     index: number,
-  ): EmbeddedViewRef<RxVirtualForViewContext<T, U>> {
-    return <EmbeddedViewRef<RxVirtualForViewContext<T, U>>>(
+  ): EmbeddedViewRef<RxVirtualForViewContext<T>> {
+    return <EmbeddedViewRef<RxVirtualForViewContext<T>>>(
       this.viewRepeater!.viewContainer.get(index)!
     );
   }

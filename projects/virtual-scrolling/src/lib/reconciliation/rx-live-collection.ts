@@ -1,11 +1,12 @@
 import { EmbeddedViewRef, TemplateRef, ViewContainerRef } from '@angular/core';
+import { RxVirtualForViewContext } from '../list-view-context';
 import { LiveCollection } from './list-reconciliation';
 
-type View = EmbeddedViewRef<{ $implicit: unknown; index: number }>;
+type View<T> = EmbeddedViewRef<RxVirtualForViewContext<T>>;
 
-export class LiveCollectionLContainerImpl extends LiveCollection<
-  View,
-  unknown
+export class LiveCollectionLContainerImpl<T> extends LiveCollection<
+  View<T>,
+  T
 > {
   /**
    Property indicating if indexes in the repeater context need to be updated following the live
@@ -15,14 +16,15 @@ export class LiveCollectionLContainerImpl extends LiveCollection<
   private needsIndexUpdate = false;
 
   updatedIndices = new Set<number>();
-  viewsUpdated = new Map<View, number>();
+  viewsUpdated = new Map<View<T>, number>();
 
   private startRange = 0;
-  private viewCache = new Array<View>();
+  private viewCache = new Array<View<T>>();
+  private itemCount = 0;
 
   constructor(
     private viewContainer: ViewContainerRef,
-    private templateRef: TemplateRef<{ $implicit: unknown; index: number }>,
+    private templateRef: TemplateRef<RxVirtualForViewContext<T>>,
     private templateCacheSize = 0,
   ) {
     super();
@@ -31,49 +33,49 @@ export class LiveCollectionLContainerImpl extends LiveCollection<
   override get length(): number {
     return this.viewContainer.length;
   }
-  override at(index: number): unknown {
+  override at(index: number): T {
     return this.getView(index).context.$implicit;
   }
-  override attach(index: number, view: View): void {
+  override attach(index: number, view: View<T>): void {
     this.needsIndexUpdate ||= index !== this.length;
     this.viewContainer.insert(view, index);
     this.viewsUpdated.set(view, index);
     this.updatedIndices.add(index);
   }
-  override detach(index: number): View {
+  override detach(index: number): View<T> {
     this.needsIndexUpdate ||= index !== this.length - 1;
-    return this.viewContainer.detach(index) as View;
+    return this.viewContainer.detach(index) as View<T>;
   }
-  override create(index: number, value: unknown): View {
+  override create(index: number, value: T): View<T> {
     const cachedView = this.viewCache.pop();
     if (cachedView) {
       cachedView.context.$implicit = value;
       cachedView.context.index = this.startRange + index;
+      cachedView.context.count = this.itemCount;
       return cachedView;
     }
-    return this.templateRef.createEmbeddedView({
-      $implicit: value,
-      index: this.startRange + index,
-    });
+    return this.templateRef.createEmbeddedView(
+      new RxVirtualForViewContext(value, index, this.itemCount),
+    );
   }
 
-  override destroy(view: View): void {
+  override destroy(view: View<T>): void {
     this.detachAndCacheView(view);
     this.viewsUpdated.set(view, -1);
   }
-  override updateValue(index: number, value: unknown): void {
+
+  override updateValue(index: number, value: T): void {
     const view = this.getView(index);
     view.context.$implicit = value;
     view.context.index = this.startRange + index;
+    view.context.count = this.itemCount;
     this.viewsUpdated.set(view, index);
     this.updatedIndices.add(index);
   }
 
-  setStartRange(startRange: number) {
+  reset(itemCount: number, startRange: number) {
+    this.itemCount = itemCount;
     this.startRange = startRange;
-  }
-
-  reset() {
     this.needsIndexUpdate = false;
     this.viewsUpdated.clear();
     this.updatedIndices.clear();
@@ -91,8 +93,12 @@ export class LiveCollectionLContainerImpl extends LiveCollection<
       for (let i = 0; i < this.length; i++) {
         const view = this.getView(i);
         const index = this.startRange + i;
-        if (index !== view.context.index) {
+        if (
+          index !== view.context.index ||
+          view.context.count !== this.itemCount
+        ) {
           view.context.index = index;
+          view.context.count = this.itemCount;
           this.viewsUpdated.set(view, i);
           this.updatedIndices.add(i);
         }
@@ -100,15 +106,15 @@ export class LiveCollectionLContainerImpl extends LiveCollection<
     }
   }
 
-  private getView(index: number): View {
-    return this.viewContainer.get(index) as View;
+  private getView(index: number): View<T> {
+    return this.viewContainer.get(index) as View<T>;
   }
 
   /** Detaches the view at the given index and inserts into the view cache. */
-  private detachAndCacheView(view: View) {
+  private detachAndCacheView(view: View<T>) {
     const index = this.viewContainer.indexOf(view);
     const detachedView =
-      index !== -1 ? <View>this.viewContainer.detach(index) : view;
+      index !== -1 ? <View<T>>this.viewContainer.detach(index) : view;
 
     if (this.viewCache.length < this.templateCacheSize) {
       this.viewCache.push(detachedView);
