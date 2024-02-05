@@ -16,6 +16,7 @@ import {
   Subject,
 } from 'rxjs';
 import {
+  debounce,
   distinctUntilChanged,
   map,
   startWith,
@@ -34,6 +35,7 @@ import {
 import {
   calculateVisibleContainerSize,
   parseScrollTopBoundaries,
+  unpatchedMicroTask,
 } from '../util';
 import {
   DEFAULT_ITEM_SIZE,
@@ -106,9 +108,7 @@ export class FixedSizeVirtualScrollStrategy<T>
 
   private readonly _scrolledIndex$ = new ReplaySubject<number>(1);
   readonly scrolledIndex$ = this._scrolledIndex$.pipe(distinctUntilChanged());
-  private _scrolledIndex = 0;
   private set scrolledIndex(index: number) {
-    this._scrolledIndex = index;
     this._scrolledIndex$.next(index);
   }
 
@@ -204,20 +204,11 @@ export class FixedSizeVirtualScrollStrategy<T>
 
   private calcRenderedRange(): void {
     const dataLengthChanged$ = this.viewRepeater!.values$.pipe(
-      map(
-        (values) =>
-          (Array.isArray(values)
-            ? values
-            : values != null
-              ? Array.from(values)
-              : []
-          ).length,
-      ),
+      map((values) => values.length),
       distinctUntilChanged(),
       tap((dataLength) => (this.contentSize = dataLength * this.itemSize)),
     );
     const onScroll$ = this.viewport!.elementScrolled$.pipe(
-      // coalesceWith(unpatchedAnimationFrameTick()),
       startWith(void 0),
       tap(() => {
         this.viewportOffset = this.viewport!.measureOffset();
@@ -248,6 +239,7 @@ export class FixedSizeVirtualScrollStrategy<T>
       this.runwayStateChanged$.pipe(startWith(void 0)),
     ])
       .pipe(
+        debounce(() => unpatchedMicroTask()),
         map(([length]) => {
           const containerSize = calculateVisibleContainerSize(
             this.containerSize,

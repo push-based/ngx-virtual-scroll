@@ -6,6 +6,7 @@ import {
   Component,
   ContentChild,
   ElementRef,
+  Input,
   NgModule,
   OnDestroy,
   Optional,
@@ -14,7 +15,7 @@ import {
   ViewEncapsulation,
 } from '@angular/core';
 import { defer, ReplaySubject, Subject } from 'rxjs';
-import { distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { distinctUntilChanged, take, takeUntil } from 'rxjs/operators';
 
 import {
   RxVirtualScrollElement,
@@ -86,6 +87,8 @@ export class RxVirtualScrollViewportComponent
     AfterContentInit,
     OnDestroy
 {
+  @Input() initialScrollIndex = 0;
+
   /** @internal */
   @ViewChild('sentinel')
   private scrollSentinel!: ElementRef<HTMLElement>;
@@ -101,6 +104,8 @@ export class RxVirtualScrollViewportComponent
   readonly elementScrolled$ =
     this.scrollElement?.elementScrolled$ ??
     defer(() => unpatchedScroll(this.runway.nativeElement));
+
+  private hasScrolledYet = false;
 
   /** @internal */
   private _containerRect$ = new ReplaySubject<{
@@ -170,6 +175,13 @@ export class RxVirtualScrollViewportComponent
       .subscribe((size) => {
         this.updateContentSize(size);
       });
+    if (this.initialScrollIndex != null && this.initialScrollIndex > 0) {
+      this.scrollStrategy.contentSize$
+        .pipe(take(1), takeUntil(this.destroy$))
+        .subscribe(() => {
+          this.scrollToIndex(this.initialScrollIndex);
+        });
+    }
   }
 
   /** @internal */
@@ -179,6 +191,9 @@ export class RxVirtualScrollViewportComponent
         'Error: rx-virtual-scroll-viewport requires a `RxVirtualViewRepeater` to be provided.',
       );
     }
+    this.elementScrolled$
+      .pipe(take(1), takeUntil(this.destroy$))
+      .subscribe(() => (this.hasScrolledYet = true));
     this.scrollStrategy.attach(this, this.viewRepeater);
   }
 
@@ -196,7 +211,7 @@ export class RxVirtualScrollViewportComponent
   }
 
   getScrollTop(): number {
-    return this.getScrollElement().scrollTop;
+    return !this.hasScrolledYet ? 0 : this.getScrollElement().scrollTop;
   }
 
   scrollTo(position: number, behavior?: ScrollBehavior): void {

@@ -55,7 +55,11 @@ export class LiveCollectionLContainerImpl<T> extends LiveCollection<
       return cachedView;
     }
     return this.templateRef.createEmbeddedView(
-      new RxVirtualForViewContext(value, index, this.itemCount),
+      new RxVirtualForViewContext(
+        value,
+        this.startRange + index,
+        this.itemCount,
+      ),
     );
   }
 
