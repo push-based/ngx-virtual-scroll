@@ -22,6 +22,7 @@ import {
   Subject,
   of,
   combineLatest,
+  NEVER,
 } from 'rxjs';
 import {
   shareReplay,
@@ -35,7 +36,7 @@ import { RxVirtualForViewContext } from './list-view-context';
 import { RxVirtualScrollStrategy, RxVirtualViewRepeater } from './model';
 import { reconcile } from './reconciliation/list-reconciliation';
 import { LiveCollectionLContainerImpl } from './reconciliation/rx-live-collection';
-import { coerceObservable } from './util';
+import { coerceObservable, getZoneUnPatchedApi } from './util';
 import {
   DEFAULT_TEMPLATE_CACHE_SIZE,
   RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
@@ -373,12 +374,6 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
     EmbeddedViewRef<RxVirtualForViewContext<T>>[]
   >();
   /** @internal */
-  readonly viewRendered$ = new Subject<{
-    view: EmbeddedViewRef<RxVirtualForViewContext<T>>;
-    index: number;
-    item: T;
-  }>();
-  /** @internal */
   readonly renderingStart$ = new Subject<Set<number>>();
 
   /** @internal */
@@ -435,13 +430,15 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
       this.template,
       this.templateCacheSize,
     );
-    Promise.resolve().then(() => {
-      this.render()
-        .pipe(takeUntil(this._destroy$))
-        .subscribe((v) => {
-          this._renderCallback?.next(v as U);
-        });
-    });
+    getZoneUnPatchedApi('Promise')
+      .resolve()
+      .then(() => {
+        this.render()
+          .pipe(takeUntil(this._destroy$))
+          .subscribe((v) => {
+            this._renderCallback?.next(v as U);
+          });
+      });
   }
 
   /** @internal */
@@ -464,8 +461,11 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
     ]).pipe(
       // map iterable to latest diff
       switchMap(([items, range]) => {
-        return this.ngZone.run(() => {
-          const iterable = items.slice(range.start, range.end);
+        const iterable = items.slice(range.start, range.end);
+        const viewsRendered = new Array<
+          EmbeddedViewRef<RxVirtualForViewContext<T>>
+        >();
+        this.ngZone.run(() => {
           this.liveCollection.reset(items.length, range.start);
           reconcile(
             this.liveCollection,
@@ -476,30 +476,22 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
           const updates = Array.from(this.liveCollection.viewsUpdated).sort(
             (a, b) => a[1] - b[1],
           );
-          const indicesToPosition = new Set(
-            Array.from(this.liveCollection.updatedIndices).sort(),
-          );
-          this.renderingStart$.next(indicesToPosition);
-          const viewsRendered = new Array<
-            EmbeddedViewRef<RxVirtualForViewContext<T>>
-          >(indicesToPosition.size);
-          for (let i = 0; i < updates.length; i++) {
-            const [view, index] = updates[i];
-            view.detectChanges();
-            if (index !== -1) {
-              this.viewRendered$.next({
-                view,
-                index,
-                item: view.context.$implicit,
-              } as any);
-              viewsRendered.push(view as any);
+          if (updates.length > 0) {
+            this.renderingStart$.next(this.liveCollection.updatedIndices);
+            for (let i = 0; i < updates.length; i++) {
+              const [view, index] = updates[i];
+              view.detectChanges();
+              if (index !== -1) {
+                viewsRendered.push(view);
+              }
             }
           }
-
-          // this.templateManager.setItemCount(items.length);
+        });
+        if (viewsRendered.length) {
           this.viewsRendered$.next(viewsRendered);
           return of(iterable);
-        });
+        }
+        return NEVER;
       }),
       catchError((err: Error) => {
         this.errorHandler.handleError(err);

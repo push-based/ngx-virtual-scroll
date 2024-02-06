@@ -186,15 +186,12 @@ export class FixedSizeVirtualScrollStrategy<T>
   private positionElements(): void {
     this.viewRepeater!.renderingStart$.pipe(
       switchMap(() => {
-        const start = this.renderedRange.start;
-        return this.viewRepeater!.viewRendered$.pipe(
-          tap(({ view, index, item }) => {
-            this._setViewPosition(view, (index + start) * this.itemSize);
-            this.viewRenderCallback.next({
-              view,
-              item,
-              index,
-            });
+        return this.viewRepeater!.viewsRendered$.pipe(
+          tap((views) => {
+            for (let i = 0; i < views.length; i++) {
+              const view = views[i];
+              this._setViewPosition(view, view.context.index * this.itemSize);
+            }
           }),
         );
       }),

@@ -27,5 +27,8 @@
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 
-  //will-change: scroll-position;
+  /*&:not(&:is(&--withSyncScrollbar)) {
+    transform: translateZ(0);
+    will-change: scroll-position;
+  }*/
 }

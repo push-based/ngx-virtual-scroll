@@ -26,6 +26,7 @@ import {
   groupBy,
   map,
   mergeMap,
+  pairwise,
   startWith,
   switchMap,
   takeUntil,
@@ -149,13 +150,13 @@ export class AutoSizeVirtualScrollStrategy<T>
    * in dimensions too much or change dimensions heavily.
    */
   @Input()
-  set withSyncScrollbar(input: boolean) {
-    this._withSyncScrollbar = input != null && `${input}` !== 'false';
+  set withResizeObserver(input: boolean) {
+    this._withResizeObserver = input != null && `${input}` !== 'false';
   }
-  get withSyncScrollbar(): boolean {
-    return this._withSyncScrollbar;
+  get withResizeObserver(): boolean {
+    return this._withResizeObserver;
   }
-  private _withSyncScrollbar = false;
+  private _withResizeObserver = true;
 
   /** @internal */
   private viewport: RxVirtualScrollViewport | null = null;
@@ -194,8 +195,6 @@ export class AutoSizeVirtualScrollStrategy<T>
   private get renderedRange(): ListRange {
     return this._renderedRange;
   }
-  /** @internal */
-  private positionedRange: ListRange = { start: 0, end: 0 };
 
   /** @internal */
   private readonly _scrolledIndex$ = new ReplaySubject<number>(1);
@@ -283,9 +282,6 @@ export class AutoSizeVirtualScrollStrategy<T>
     ) {
       this.recalculateRange$.next();
     }
-    if (changes['withSyncScrollbar']) {
-      this.updateScrollElementClass();
-    }
   }
 
   /** @internal */
@@ -300,7 +296,6 @@ export class AutoSizeVirtualScrollStrategy<T>
   ): void {
     this.viewport = viewport;
     this.viewRepeater = viewRepeater;
-    this.updateScrollElementClass();
     this.maintainVirtualItems();
     this.calcRenderedRange();
     this.positionElements();
@@ -308,7 +303,6 @@ export class AutoSizeVirtualScrollStrategy<T>
 
   /** @internal */
   detach(): void {
-    this.updateScrollElementClass(false);
     this.viewport = null;
     this.viewRepeater = null;
     this._virtualItems = [];
@@ -362,6 +356,15 @@ export class AutoSizeVirtualScrollStrategy<T>
     // the IterableDiffer approach, especially on move operations
     const itemCache = new Map<any, { item: T; index: number }>();
     const trackBy = this.viewRepeater!._trackBy ?? ((i, item) => item);
+    this.renderedRange$
+      .pipe(pairwise(), this.until$())
+      .subscribe(([oldRange, newRange]) => {
+        for (let i = oldRange.start; i < oldRange.end; i++) {
+          if (i < newRange.start || i >= newRange.end) {
+            this._virtualItems[i].position = undefined;
+          }
+        }
+      });
     this.viewRepeater!.values$.pipe(
       this.until$(),
       tap((values) => {
@@ -387,7 +390,11 @@ export class AutoSizeVirtualScrollStrategy<T>
             // todo: properly determine update (Object.is?)
             virtualItems[i] = this._virtualItems[i];
             // if index is not part of rendered range, remove cache
-            if (i < this.renderedRange.start || i >= this.renderedRange.end) {
+            if (
+              !this.withResizeObserver ||
+              i < this.renderedRange.start ||
+              i >= this.renderedRange.end
+            ) {
               virtualItems[i].cached = false;
             }
             itemCache.set(id, { item: values[i], index: i });
@@ -406,6 +413,7 @@ export class AutoSizeVirtualScrollStrategy<T>
         }
         existingIds.clear();
         this.contentLength = dataLength;
+        this._renderedRange.end = Math.min(dataLength, this._renderedRange.end);
         this.contentSize = size;
       }),
       finalize(() => itemCache.clear()),
@@ -538,90 +546,90 @@ export class AutoSizeVirtualScrollStrategy<T>
         // if it's not the first one, we maybe have to adjust the position
         // of all items in the viewport before this index
         const initialIndex = batchedUpdates.size
-          ? batchedUpdates.values().next().value + this.renderedRange.start
+          ? Array.from(batchedUpdates).sort()[0] + this.renderedRange.start
           : this.renderedRange.start;
-        let position = 0;
         let scrollToAnchorPosition: number | null = null;
-        return this.viewRepeater!.viewRendered$.pipe(
-          tap(({ view, index: viewIndex, item }) => {
-            const itemIndex = view.context.index;
-            // this most of the time causes a forced reflow per rendered view.
-            // it doesn't sound good, but it's still way more stable than
-            // having one large reflow in a microtask after the actual
-            // scheduler tick.
-            // Right here, we can insert work into the task which is currently
-            // executed as part of the concurrent scheduler tick.
-            // causing the forced reflow here, also makes it count for the
-            // schedulers frame budget. This way we will always run with the
-            // configured FPS. The only case where this is not true is when rendering 1 single view
-            // already explodes the budget
-            const [, sizeDiff] = this.updateElementSize(view, itemIndex);
-            const virtualItem = this._virtualItems[itemIndex];
+        return this.viewRepeater!.viewsRendered$.pipe(
+          map((views) => {
+            const toPosition = new Array<{
+              view: EmbeddedViewRef<RxVirtualForViewContext<T>>;
+              position: number;
+            }>();
+            let position = 0;
+            let i = 0;
+            for (i; i < views.length; i++) {
+              const view = views[i];
+              const itemIndex = view.context.index;
+              const viewIndex = itemIndex - this.renderedRange.start;
+              const [, sizeDiff] = this.updateElementSize(view, itemIndex);
+              const virtualItem = this._virtualItems[itemIndex];
 
-            // before positioning the first view of this batch, calculate the
-            // anchorScrollTop & initial position of the view
-            if (itemIndex === initialIndex) {
-              this.calcAnchorScrollTop();
-              position = this.calcInitialPosition(itemIndex);
+              // before positioning the first view of this batch, calculate the
+              // anchorScrollTop & initial position of the view
+              if (itemIndex === initialIndex) {
+                this.calcAnchorScrollTop();
+                position = this.calcInitialPosition(itemIndex);
 
-              // if we receive a partial update and the current views position is
-              // new, we can safely assume that all positions from views before the current
-              // index are also off. We need to adjust them
-              if (
-                initialIndex > this.renderedRange.start &&
-                virtualItem.position !== position
-              ) {
-                let beforePosition = position;
-                let i = initialIndex - 1;
-                while (i >= this.renderedRange.start) {
-                  const view = this.getViewRef(i - this.renderedRange.start);
-                  const virtualItem = this._virtualItems[i];
-                  const element = this.getElement(view);
-                  beforePosition -= virtualItem.size;
-                  virtualItem.position = beforePosition;
-                  this.positionElement(element, beforePosition);
-                  i--;
+                // if we receive a partial update and the current views position is
+                // new, we can safely assume that all positions from views before the current
+                // index are also off. We need to adjust them
+                if (
+                  initialIndex > this.renderedRange.start &&
+                  virtualItem.position !== position
+                ) {
+                  let beforePosition = position;
+                  let i = initialIndex - 1;
+                  while (i >= this.renderedRange.start) {
+                    const view = this.getViewRef(i - this.renderedRange.start);
+                    const virtualItem = this._virtualItems[i];
+                    beforePosition -= virtualItem.size;
+                    virtualItem.position = beforePosition;
+                    toPosition.push({ view, position: beforePosition });
+                    i--;
+                  }
                 }
+              } else if (itemIndex < this.anchorItem.index && sizeDiff) {
+                this.anchorScrollTop += sizeDiff;
               }
-            } else if (itemIndex < this.anchorItem.index && sizeDiff) {
-              this.anchorScrollTop += sizeDiff;
-            }
-            const size = virtualItem.size;
-            // position current element if we need to
-            if (virtualItem.position !== position) {
-              const element = this.getElement(view);
-              this.positionElement(element, position);
-              virtualItem.position = position;
-            }
-            if (this._scrollToIndex === itemIndex) {
-              scrollToAnchorPosition = position;
-            }
-            position += size;
-            // immediately activate the ResizeObserver after initial positioning
-            viewsToObserve$.next(view);
-            this.viewRenderCallback.next({
-              index: itemIndex,
-              view,
-              item,
-            });
-            // after positioning the actual view, we also need to position all
-            // views from the current index on until either the renderedRange.end
-            // is hit or we hit an index that will anyway receive an update.
-            // we can derive that information from the batchedUpdates index Set
-            const { lastPositionedIndex: lastIndex, position: newPosition } =
-              this.positionUnchangedViews({
+              const size = virtualItem.size;
+              // position current element if we need to
+              if (virtualItem.position !== position) {
+                toPosition.push({ view, position });
+                virtualItem.position = position;
+              }
+              if (this._scrollToIndex === itemIndex) {
+                scrollToAnchorPosition = position;
+              }
+              position += size;
+              // after positioning the actual view, we also need to position all
+              // views from the current index on until either the renderedRange.end
+              // is hit or we hit an index that will anyway receive an update.
+              // we can derive that information from the batchedUpdates index Set
+              const { position: newPosition } = this.positionUnchangedViews({
+                toPosition,
                 viewIndex,
                 itemIndex,
                 batchedUpdates,
                 position,
               });
-            position = newPosition;
-            this.positionedRange.start = this.renderedRange.start;
-            this.positionedRange.end = lastIndex + 1;
+              position = newPosition;
+            }
+            return { toPosition };
           }),
+          filter(({ toPosition }) => toPosition.length > 0),
           debounce(() => unpatchedMicroTask()),
-          tap(() => {
-            this.adjustContentSize(position);
+          tap(({ toPosition }) => {
+            let position = 0;
+            let lastIndex = 0;
+            for (let i = 0; i < toPosition.length; i++) {
+              const { view, position: elementPosition } = toPosition[i];
+              this.positionElement(this.getElement(view), elementPosition);
+              lastIndex = view.context.index;
+              position = elementPosition + this.getItemSize(lastIndex);
+              // immediately activate the ResizeObserver after initial positioning
+              viewsToObserve$.next(view);
+            }
+            this.adjustContentSize(position, lastIndex + 1);
             if (this._scrollToIndex === null) {
               this.maybeAdjustScrollPosition();
             } else if (scrollToAnchorPosition != null) {
@@ -632,12 +640,8 @@ export class AutoSizeVirtualScrollStrategy<T>
                 ) {
                   // if the anchorItemPosition is larger than the maximum scrollPos,
                   // we want to scroll until the bottom.
-                  // of course, we need to be sure all the items until the end are positioned
-                  // until we are sure that we need to scroll to the bottom
-                  if (this.renderedRange.end === this.positionedRange.end) {
-                    this._scrollToIndex = null;
-                    this.scrollTo(this.contentSize);
-                  }
+                  this._scrollToIndex = null;
+                  this.scrollTo(this.contentSize);
                 } else {
                   this._scrollToIndex = null;
                   this.scrollTo(scrollToAnchorPosition);
@@ -652,22 +656,12 @@ export class AutoSizeVirtualScrollStrategy<T>
       }),
     );
     const positionByResizeObserver$ = viewsToObserve$.pipe(
+      filter(() => this.withResizeObserver),
       groupBy((viewRef) => viewRef),
       mergeMap((o$) =>
         o$.pipe(
-          exhaustMap((viewRef) =>
-            this.observeViewSize$(viewRef).pipe(
-              finalize(() => {
-                if (
-                  this._virtualItems[viewRef.context.index]?.position !==
-                  undefined
-                ) {
-                  this._virtualItems[viewRef.context.index].position =
-                    undefined;
-                }
-              }),
-            ),
-          ),
+          exhaustMap((viewRef) => this.observeViewSize$(viewRef)),
+          filter((value) => value != null),
           tap(([index, viewIndex]) => {
             this.calcAnchorScrollTop();
             let position = this.calcInitialPosition(index);
@@ -688,8 +682,7 @@ export class AutoSizeVirtualScrollStrategy<T>
             // position all views from the specified viewIndex
             while (viewIdx < this.viewRepeater!.viewContainer.length) {
               const view = this.getViewRef(viewIdx);
-              const itemIndex = view.context.index;
-              const virtualItem = this._virtualItems[itemIndex];
+              const virtualItem = this._virtualItems[view.context.index];
               const element = this.getElement(view);
               virtualItem.position = position;
               this.positionElement(element, position);
@@ -707,9 +700,9 @@ export class AutoSizeVirtualScrollStrategy<T>
   }
 
   /** @internal */
-  private adjustContentSize(position: number) {
+  private adjustContentSize(position: number, start: number) {
     let newContentSize = position;
-    for (let i = this.positionedRange.end; i < this._virtualItems.length; i++) {
+    for (let i = start; i < this._virtualItems.length; i++) {
       newContentSize += this.getItemSize(i);
     }
     this.contentSize = newContentSize;
@@ -739,26 +732,14 @@ export class AutoSizeVirtualScrollStrategy<T>
         filter(
           (diff) =>
             diff !== null &&
-            diff[0] >= this.positionedRange.start &&
-            diff[0] < this.positionedRange.end,
+            diff[0] >= this.renderedRange.start &&
+            diff[0] < this.renderedRange.end,
         ),
         takeUntil(
           merge(
-            this.viewRepeater!.viewRendered$,
+            this.viewRepeater!.viewsRendered$,
             this.viewRepeater!.renderingStart$,
           ).pipe(
-            tap(() => {
-              // we need to clean up the position property for views
-              // that fall out of the renderedRange.
-              const index = viewRef.context.index;
-              if (
-                this._virtualItems[index] &&
-                (index < this.renderedRange.start ||
-                  index >= this.renderedRange.end)
-              ) {
-                this._virtualItems[index].position = undefined;
-              }
-            }),
             filter(
               () => this.viewRepeater!.viewContainer.indexOf(viewRef) === -1,
             ),
@@ -799,16 +780,21 @@ export class AutoSizeVirtualScrollStrategy<T>
 
   /** @internal */
   private positionUnchangedViews({
+    toPosition,
     viewIndex,
     itemIndex,
     batchedUpdates,
     position,
   }: {
+    toPosition: Array<{ view: EmbeddedViewRef<any>; position: number }>;
     viewIndex: number;
     itemIndex: number;
     batchedUpdates: Set<number>;
     position: number;
-  }): { position: number; lastPositionedIndex: number } {
+  }): {
+    position: number;
+    lastPositionedIndex: number;
+  } {
     let _viewIndex = viewIndex + 1;
     let index = itemIndex + 1;
     let lastPositionedIndex = itemIndex;
@@ -816,8 +802,7 @@ export class AutoSizeVirtualScrollStrategy<T>
       const virtualItem = this._virtualItems[index];
       if (position !== virtualItem.position) {
         const view = this.getViewRef(_viewIndex);
-        const element = this.getElement(view);
-        this.positionElement(element, position);
+        toPosition.push({ view, position });
         virtualItem.position = position;
       }
       position += virtualItem.size;
@@ -904,20 +889,6 @@ export class AutoSizeVirtualScrollStrategy<T>
   private positionElement(element: HTMLElement, scrollTop: number): void {
     element.style.position = 'absolute';
     element.style.transform = `translateY(${scrollTop}px)`;
-  }
-
-  /** @internal */
-  private updateScrollElementClass(force = this.withSyncScrollbar): void {
-    const scrollElement = this.viewport?.getScrollElement?.();
-    if (
-      !!scrollElement &&
-      scrollElement.classList.contains('rx-virtual-scroll-element')
-    ) {
-      scrollElement.classList.toggle(
-        'rx-virtual-scroll-element--withSyncScrollbar',
-        force,
-      );
-    }
   }
 }
 

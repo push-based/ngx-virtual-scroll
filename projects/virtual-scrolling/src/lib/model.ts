@@ -5,7 +5,7 @@ import {
   TrackByFunction,
   ViewContainerRef,
 } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { RxVirtualForViewContext } from './list-view-context';
 
 export interface ListRange {
@@ -37,17 +37,6 @@ export abstract class RxVirtualScrollStrategy<T> {
   abstract renderedRange$: Observable<ListRange>;
   /** @internal */
   abstract contentSize$: Observable<number>;
-
-  /**
-   * @description
-   *
-   * Emits whenever an update to a single view was rendered
-   */
-  readonly viewRenderCallback = new Subject<{
-    view: EmbeddedViewRef<RxVirtualForViewContext<T>>;
-    item: T;
-    index: number;
-  }>();
 
   /** @internal */
   private nodeIndex?: number;
@@ -103,11 +92,6 @@ export abstract class RxVirtualViewRepeater<T> {
   abstract viewsRendered$: Observable<
     EmbeddedViewRef<RxVirtualForViewContext<T>>[]
   >;
-  abstract viewRendered$: Observable<{
-    view: EmbeddedViewRef<RxVirtualForViewContext<T>>;
-    index: number;
-    item: T;
-  }>;
   abstract viewContainer: ViewContainerRef;
   abstract renderingStart$: Observable<Set<number>>;
   _trackBy: TrackByFunction<T> | null;

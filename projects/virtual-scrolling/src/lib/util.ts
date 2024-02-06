@@ -13,17 +13,17 @@ import { map } from 'rxjs/operators';
  *
  */
 export function getZoneUnPatchedApi<
-  N extends keyof (Window & typeof globalThis)
+  N extends keyof (Window & typeof globalThis),
 >(name: N): (Window & typeof globalThis)[N];
 
 export function getZoneUnPatchedApi<T extends object, N extends keyof T>(
   target: T,
-  name: N
+  name: N,
 ): T[N];
 
 export function getZoneUnPatchedApi<T extends object, N extends keyof T>(
   targetOrName: T | string,
-  name?: N
+  name?: N,
 ) {
   // If the user has provided the API name as the first argument, for instance:
   // `const addEventListener = getZoneUnPatchedApi('addEventListener');`
@@ -32,7 +32,10 @@ export function getZoneUnPatchedApi<T extends object, N extends keyof T>(
     name = targetOrName as N;
     targetOrName = globalThis as T;
   }
-  return (targetOrName as T)['__zone_symbol__' + String(name)] || (targetOrName as T)[name];
+  return (
+    (targetOrName as T)['__zone_symbol__' + String(name)] ||
+    (targetOrName as T)[name]
+  );
 }
 
 export function unpatchedMicroTask(): Observable<void> {
@@ -50,7 +53,7 @@ export function unpatchedScroll(el: EventTarget): Observable<void> {
         el,
         'scroll',
         listener,
-        { passive: true }
+        { passive: true },
       );
     };
   });
@@ -66,7 +69,7 @@ export function parseScrollTopBoundaries(
   scrollTop: number,
   offset: number,
   contentSize: number,
-  containerSize: number
+  containerSize: number,
 ): {
   scrollTopWithOutOffset: number;
   scrollTopAfterOffset: number;
@@ -95,7 +98,7 @@ export function parseScrollTopBoundaries(
 export function calculateVisibleContainerSize(
   containerSize: number,
   scrollTopWithOutOffset: number,
-  scrollTopAfterOffset: number
+  scrollTopAfterOffset: number,
 ) {
   let clamped = containerSize;
   if (scrollTopWithOutOffset < 0) {
@@ -114,7 +117,6 @@ export function coerceObservable<T>(): OperatorFunction<
   Observable<T | null | undefined> | T | null | undefined,
   Observable<T | null | undefined>
 > {
-  return (o$: Observable<Observable<T> | T>) => o$.pipe(
-    map(o => isObservable(o) ? o : of(o))
-  );
+  return (o$: Observable<Observable<T> | T>) =>
+    o$.pipe(map((o) => (isObservable(o) ? o : of(o))));
 }
