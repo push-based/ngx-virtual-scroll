@@ -15,8 +15,8 @@ import { DemoComponentState } from '../shared/demo-component.state';
         [itemAmount]="(state.items$ | async).length"
         [renderedItemsAmount]="state.renderedItems$ | async"
         [scrolledIndex]="viewport.scrolledIndexChange | async"
-        [withStableScrollbar]="true"
-        [(stableScrollbar)]="stableScrollbar"
+        [showWithStableScrollbar]="true"
+        [(withResizeObserver)]="withResizeObserver"
         [(runwayItems)]="state.runwayItems"
         [(runwayItemsOpposite)]="state.runwayItemsOpposite"
         [(templateCacheSize)]="state.viewCache"
@@ -26,7 +26,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
         <rx-virtual-scroll-viewport
           [runwayItems]="state.runwayItems"
           [runwayItemsOpposite]="state.runwayItemsOpposite"
-          [withSyncScrollbar]="stableScrollbar"
+          [withResizeObserver]="withResizeObserver"
           [tombstoneSize]="100"
           [initialScrollIndex]="demoPanel.initialScrollTo"
           autosize
@@ -71,7 +71,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutosizeComponent {
-  stableScrollbar = true;
+  withResizeObserver = true;
   trackItem = (i: number, item: Item) => item.id;
   constructor(public state: DemoComponentState) {}
 }
