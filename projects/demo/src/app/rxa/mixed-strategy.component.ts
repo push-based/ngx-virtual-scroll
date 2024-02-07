@@ -1,4 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RxVirtualScrollStrategy } from '../../../../virtual-scrolling/src/lib/model';
+import { AutoSizeVirtualScrollStrategy } from '../../../../virtual-scrolling/src/lib/scroll-strategies/autosize-virtual-scroll-strategy';
+import { FixedSizeVirtualScrollStrategy } from '../../../../virtual-scrolling/src/lib/scroll-strategies/fixed-size-virtual-scroll-strategy';
+import { RxaResizeObserver } from '../../../../virtual-scrolling/src/lib/scroll-strategies/resize-observer';
 import { DataService, Item } from '../shared/data.service';
 import { DemoComponentState } from '../shared/demo-component.state';
 
@@ -12,6 +16,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
       <demo-panel
         #demoPanel
         (scrollToIndex)="viewport.scrollToIndex($event)"
+        [(scrollStrategy)]="strategy"
         [itemAmount]="(state.items$ | async).length"
         [renderedItemsAmount]="state.renderedItems$ | async"
         [scrolledIndex]="viewport.scrolledIndexChange | async"
@@ -24,16 +29,13 @@ import { DemoComponentState } from '../shared/demo-component.state';
       <div class="demo-list">
         <list-header></list-header>
         <rx-virtual-scroll-viewport
-          [runwayItems]="state.runwayItems"
-          [runwayItemsOpposite]="state.runwayItemsOpposite"
-          [withResizeObserver]="withResizeObserver"
-          [tombstoneSize]="100"
+          [scrollStrategy]="scrollStrategy"
           [initialScrollIndex]="demoPanel.initialScrollTo"
-          autosize
           #viewport
         >
           <item
-            class="autosize"
+            [class.autosize]="strategy === 'auto'"
+            [class.fixed-size]="strategy === 'fixed'"
             *rxVirtualFor="
               let item of state.dataService.items$;
               renderCallback: state.renderCallback$;
@@ -47,7 +49,10 @@ import { DemoComponentState } from '../shared/demo-component.state';
             (moveDown)="state.dataService.moveItem(item, i, i + 1)"
             [item]="item"
           >
-            <div class="item__description" *ngIf="item.description">
+            <div
+              class="item__description"
+              *ngIf="strategy === 'auto' && item.description"
+            >
               <div class="desc-title">
                 <mat-icon>description</mat-icon> Additional Info
               </div>
@@ -67,11 +72,41 @@ import { DemoComponentState } from '../shared/demo-component.state';
       }
     `,
   ],
-  providers: [DataService, DemoComponentState],
+  providers: [
+    DataService,
+    DemoComponentState,
+    FixedSizeVirtualScrollStrategy,
+    AutoSizeVirtualScrollStrategy,
+    RxaResizeObserver,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AutosizeComponent {
+export class MixedStrategyComponent {
   withResizeObserver = true;
-  trackItem = (i: number, item: Item) => item.id;
-  constructor(public state: DemoComponentState) {}
+
+  scrollStrategy: RxVirtualScrollStrategy<Item>;
+
+  _strategy: 'fixed' | 'dynamic' | 'auto' = 'fixed';
+  get strategy() {
+    return this._strategy;
+  }
+  set strategy(strategy) {
+    this._strategy = strategy;
+    if (strategy === 'fixed') {
+      this.scrollStrategy = this.fixedSizeStrategy;
+    } else {
+      this.scrollStrategy = this.autosizeStrategy;
+    }
+  }
+
+  constructor(
+    public state: DemoComponentState,
+    private resizeObserver: RxaResizeObserver,
+    private fixedSizeStrategy: FixedSizeVirtualScrollStrategy<Item>,
+    private autosizeStrategy: AutoSizeVirtualScrollStrategy<Item>,
+  ) {
+    fixedSizeStrategy.itemSize = 100;
+    autosizeStrategy.tombstoneSize = 100;
+    this.scrollStrategy = fixedSizeStrategy;
+  }
 }

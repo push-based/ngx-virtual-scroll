@@ -24,7 +24,8 @@
 }
 .rx-virtual-scroll-element {
   contain: strict;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 
   /*&:not(&:is(&--withSyncScrollbar)) {

@@ -94,6 +94,7 @@ export abstract class RxVirtualViewRepeater<T> {
   >;
   abstract viewContainer: ViewContainerRef;
   abstract renderingStart$: Observable<Set<number>>;
+  abstract setScrollStrategy(scrollStrategy: RxVirtualScrollStrategy<T>);
   _trackBy: TrackByFunction<T> | null;
 }
 

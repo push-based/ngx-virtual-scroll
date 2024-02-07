@@ -120,12 +120,13 @@ export class FixedSizeVirtualScrollStrategy<T>
     this._contentSize$.next(size);
   }
 
-  private readonly _renderedRange$ = new ReplaySubject<ListRange>(1);
+  private readonly _renderedRange$ = new Subject<ListRange>();
   renderedRange$ = this._renderedRange$.asObservable();
   private _renderedRange: ListRange = { start: 0, end: 0 };
   private set renderedRange(range: ListRange) {
     this._renderedRange = range;
     this._renderedRange$.next(range);
+    // this.viewRepeater.setRenderedRange(range);
   }
   private get renderedRange(): ListRange {
     return this._renderedRange;
@@ -181,6 +182,7 @@ export class FixedSizeVirtualScrollStrategy<T>
     this.viewport = null;
     this.viewRepeater = null;
     this.detached$.next();
+    this._renderedRange = { start: 0, end: 0 };
   }
 
   private positionElements(): void {

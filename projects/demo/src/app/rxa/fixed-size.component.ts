@@ -54,11 +54,6 @@ import { DemoComponentState } from '../shared/demo-component.state';
         flex-direction: column;
         height: 100%;
       }
-
-      .item {
-        height: 100px;
-        overflow: hidden;
-      }
     `,
   ],
   providers: [DataService, DemoComponentState],

@@ -6,16 +6,34 @@ import {
   Component,
   ContentChild,
   ElementRef,
+  Host,
   Input,
   NgModule,
   OnDestroy,
+  OnInit,
   Optional,
   Output,
   ViewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { defer, ReplaySubject, Subject } from 'rxjs';
-import { distinctUntilChanged, take, takeUntil } from 'rxjs/operators';
+import {
+  defer,
+  isObservable,
+  Observable,
+  of,
+  ReplaySubject,
+  Subject,
+} from 'rxjs';
+import {
+  distinctUntilChanged,
+  map,
+  shareReplay,
+  switchAll,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs/operators';
 
 import {
   RxVirtualScrollElement,
@@ -64,7 +82,7 @@ const NG_DEV_MODE = typeof ngDevMode === 'undefined' || !!ngDevMode;
         class="rx-virtual-scroll__sentinel"
         *ngIf="!scrollElement"
       ></div>
-      <ng-content></ng-content>
+      <div class="rx-virtual-scroll__content"><ng-content></ng-content></div>
     </div>
   `,
   providers: [
@@ -83,6 +101,7 @@ const NG_DEV_MODE = typeof ngDevMode === 'undefined' || !!ngDevMode;
 export class RxVirtualScrollViewportComponent
   implements
     RxVirtualScrollViewport,
+    OnInit,
     AfterViewInit,
     AfterContentInit,
     OnDestroy
@@ -96,6 +115,27 @@ export class RxVirtualScrollViewportComponent
   /** @internal */
   @ViewChild('runway', { static: true })
   private runway!: ElementRef<HTMLElement>;
+
+  private _scrollStrategy$ = new ReplaySubject<
+    | Observable<RxVirtualScrollStrategy<unknown>>
+    | RxVirtualScrollStrategy<unknown>
+  >(1);
+  private scrollStrategy$ = this._scrollStrategy$.pipe(
+    map((strategy) => (isObservable(strategy) ? strategy : of(strategy))),
+    switchAll(),
+    tap((strategy) => (this._scrollStrategy = strategy)),
+    shareReplay({ bufferSize: 1, refCount: true }),
+  );
+  private _scrollStrategy: RxVirtualScrollStrategy<unknown>;
+  @Input()
+  // TODO: make observable
+  set scrollStrategy(
+    scrollStrategy:
+      | RxVirtualScrollStrategy<unknown>
+      | Observable<RxVirtualScrollStrategy<unknown>>,
+  ) {
+    this._scrollStrategy$.next(scrollStrategy);
+  }
 
   /** @internal */
   @ContentChild(RxVirtualViewRepeater)
@@ -124,7 +164,9 @@ export class RxVirtualScrollViewportComponent
    * in sync with the DOM when the next `renderCallback` emitted an event.
    */
   @Output()
-  readonly viewRange = this.scrollStrategy.renderedRange$;
+  readonly viewRange = this.scrollStrategy$.pipe(
+    switchMap((scrollStrategy) => scrollStrategy.renderedRange$),
+  );
 
   /**
    * @description
@@ -133,7 +175,9 @@ export class RxVirtualScrollViewportComponent
    * item actually being visible to the user.
    */
   @Output()
-  readonly scrolledIndexChange = this.scrollStrategy.scrolledIndex$;
+  readonly scrolledIndexChange = this.scrollStrategy$.pipe(
+    switchMap((scrollStrategy) => scrollStrategy.scrolledIndex$),
+  );
 
   /** @internal */
   private readonly destroy$ = new Subject<void>();
@@ -142,12 +186,10 @@ export class RxVirtualScrollViewportComponent
   constructor(
     private elementRef: ElementRef<HTMLElement>,
     @Optional() public scrollElement: RxVirtualScrollElement,
-    @Optional() private scrollStrategy: RxVirtualScrollStrategy<unknown>,
+    @Optional() @Host() scrollStrategy?: RxVirtualScrollStrategy<unknown>,
   ) {
-    if (NG_DEV_MODE && !this.scrollStrategy) {
-      throw Error(
-        'Error: rx-virtual-scroll-viewport requires an `RxVirtualScrollStrategy` to be set.',
-      );
+    if (scrollStrategy) {
+      this.scrollStrategy = scrollStrategy;
     }
     observeElementSize(
       this.scrollElement?.getElementRef()?.nativeElement ??
@@ -169,15 +211,31 @@ export class RxVirtualScrollViewportComponent
       .subscribe(this._containerRect$);
   }
 
+  ngOnInit() {
+    if (NG_DEV_MODE && !this._scrollStrategy) {
+      throw Error(
+        'Error: rx-virtual-scroll-viewport requires an `RxVirtualScrollStrategy` to be set.',
+      );
+    }
+  }
+
   ngAfterViewInit() {
-    this.scrollStrategy.contentSize$
-      .pipe(distinctUntilChanged(), takeUntil(this.destroy$))
+    this.scrollStrategy$
+      .pipe(
+        switchMap((scrollStrategy) => scrollStrategy.contentSize$),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$),
+      )
       .subscribe((size) => {
         this.updateContentSize(size);
       });
     if (this.initialScrollIndex != null && this.initialScrollIndex > 0) {
-      this.scrollStrategy.contentSize$
-        .pipe(take(1), takeUntil(this.destroy$))
+      this.scrollStrategy$
+        .pipe(
+          switchMap((scrollStrategy) => scrollStrategy.contentSize$),
+          take(1),
+          takeUntil(this.destroy$),
+        )
         .subscribe(() => {
           this.scrollToIndex(this.initialScrollIndex);
         });
@@ -194,13 +252,21 @@ export class RxVirtualScrollViewportComponent
     this.elementScrolled$
       .pipe(take(1), takeUntil(this.destroy$))
       .subscribe(() => (this.hasScrolledYet = true));
-    this.scrollStrategy.attach(this, this.viewRepeater);
+    let activeStrategy: RxVirtualScrollStrategy<unknown>;
+    this.scrollStrategy$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((strategy) => {
+        activeStrategy?.detach();
+        activeStrategy = strategy;
+        activeStrategy.attach(this, this.viewRepeater);
+        this.viewRepeater.setScrollStrategy(activeStrategy);
+      });
   }
 
   /** @internal */
   ngOnDestroy(): void {
     this.destroy$.next();
-    this.scrollStrategy.detach();
+    this._scrollStrategy.detach();
   }
 
   getScrollElement(): HTMLElement {
@@ -220,7 +286,7 @@ export class RxVirtualScrollViewportComponent
   }
 
   scrollToIndex(index: number, behavior?: ScrollBehavior): void {
-    this.scrollStrategy.scrollToIndex(index, behavior);
+    this._scrollStrategy.scrollToIndex(index, behavior);
   }
 
   measureOffset(): number {

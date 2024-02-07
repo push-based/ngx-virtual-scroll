@@ -101,7 +101,7 @@ import { DataService } from '../data.service';
                 />
               </td>
             </tr>
-            <tr *ngIf="showWithStableScrollbar">
+            <tr *ngIf="showWithResizeObserver">
               <td>Enable Resize Observer</td>
               <td>
                 <input
@@ -112,6 +112,22 @@ import { DataService } from '../data.service';
                   [checked]="withResizeObserver"
                   #stableScrollbarInput
                 />
+              </td>
+            </tr>
+            <tr>
+              <td>Select Strategy</td>
+              <td>
+                <select
+                  #strategySelect
+                  [value]="scrollStrategy"
+                  (change)="
+                    scrollStrategyChange.emit($any(strategySelect.value))
+                  "
+                >
+                  <option value="fixed">Fixed Size</option>
+                  <option value="auto">Auto Size</option>
+                  <!--                  <option value="fixed">Dynamic Size</option>-->
+                </select>
               </td>
             </tr>
           </table>
@@ -193,10 +209,14 @@ import { DataService } from '../data.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DemoPanelComponent {
+  @Input() scrollStrategy: 'fixed' | 'auto' | 'dynamic' = 'fixed';
+  @Output() scrollStrategyChange = new EventEmitter<
+    'fixed' | 'auto' | 'dynamic'
+  >();
   @Input() scrollToExperimental = false;
   @Input() itemAmount = 0;
   @Input() renderedItemsAmount = 0;
-  @Input() showWithStableScrollbar = false;
+  @Input() showWithResizeObserver = false;
   @Input() withResizeObserver = false;
   @Output() withResizeObserverChange = new EventEmitter<boolean>();
   @Input() scrolledIndex = 0;

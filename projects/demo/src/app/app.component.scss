@@ -156,6 +156,12 @@ button {
   .item {
     display: block;
     width: 100%;
+    will-change: transform;
+
+    &.fixed-size {
+      height: 100px;
+      overflow: hidden;
+    }
     .item-grid {
       display: grid;
       height: 100%;

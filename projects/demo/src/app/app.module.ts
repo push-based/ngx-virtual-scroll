@@ -1,4 +1,3 @@
-import { CommonModule, DatePipe } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -15,6 +14,7 @@ import { routes } from './app.routes';
 import { BlankComponent } from './blank/blank.component';
 import { AutosizeComponent } from './rxa/autosize.component';
 import { FixedSizeComponent } from './rxa/fixed-size.component';
+import { MixedStrategyComponent } from './rxa/mixed-strategy.component';
 import { DemoPanelModule } from './shared/demo-panel/demo-panel.component';
 import { ItemComponent } from './shared/item/item.component';
 import { ListHeaderComponent } from './shared/item/list-header.component';
@@ -27,6 +27,7 @@ import { ListHeaderComponent } from './shared/item/list-header.component';
     ListHeaderComponent,
     AutosizeComponent,
     FixedSizeComponent,
+    MixedStrategyComponent,
   ],
   bootstrap: [AppComponent],
   imports: [

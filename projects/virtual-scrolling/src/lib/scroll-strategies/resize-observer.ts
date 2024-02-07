@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 
 @Injectable()
-export class RxaResizeObserver {
+export class RxaResizeObserver implements OnDestroy {
   private resizeObserver = new ResizeObserver((events) => {
     this.viewsResized$.next(events);
   });
@@ -12,7 +12,7 @@ export class RxaResizeObserver {
 
   observeElement(
     element: Element,
-    options?: ResizeObserverOptions
+    options?: ResizeObserverOptions,
   ): Observable<ResizeObserverEntry> {
     this.resizeObserver.observe(element, options);
     return new Observable<ResizeObserverEntry>((observer) => {
@@ -29,7 +29,7 @@ export class RxaResizeObserver {
     });
   }
 
-  destroy() {
+  ngOnDestroy() {
     this.resizeObserver.disconnect();
   }
 }

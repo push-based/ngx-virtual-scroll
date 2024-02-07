@@ -180,7 +180,7 @@ export class AutoSizeVirtualScrollStrategy<T>
   }
 
   /** @internal */
-  private readonly _renderedRange$ = new ReplaySubject<ListRange>(1);
+  private readonly _renderedRange$ = new Subject<ListRange>();
   /** @internal */
   readonly renderedRange$ = this._renderedRange$.asObservable();
   /** @internal */
@@ -303,11 +303,19 @@ export class AutoSizeVirtualScrollStrategy<T>
 
   /** @internal */
   detach(): void {
+    this.detached$.next();
     this.viewport = null;
     this.viewRepeater = null;
     this._virtualItems = [];
-    this.resizeObserver.destroy();
-    this.detached$.next();
+    this._scrollToIndex = null;
+    this._renderedRange = { start: 0, end: 0 };
+    this.anchorItem = { index: 0, offset: 0 };
+    this.lastScreenItem = { index: 0, offset: 0 };
+    this.scrollTop = 0;
+    this.scrollTopWithOutOffset = 0;
+    this.scrollTopAfterOffset = 0;
+    this.viewportOffset = 0;
+    this.anchorScrollTop = 0;
   }
 
   scrollToIndex(index: number, behavior?: ScrollBehavior): void {

@@ -77,7 +77,6 @@ const NG_DEV_MODE = typeof ngDevMode === 'undefined' || !!ngDevMode;
  * The API is a combination of \@rx-angular/template/for &
  *  \@angular/cdk `*cdkVirtualFor`.
  * * trackBy: `(index: number, item: T) => any` | `keyof T`
- * * strategy: `string` | `Observable<string>`
  * * parent: `boolean`;
  * * renderCallback: `Subject<T[]>`
  * * viewCache: `number`
@@ -369,6 +368,10 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
     this._renderCallback = renderCallback;
   }
 
+  private readonly scrollStrategy$ = new ReplaySubject<
+    RxVirtualScrollStrategy<T>
+  >(1);
+
   /** @internal */
   readonly viewsRendered$ = new Subject<
     EmbeddedViewRef<RxVirtualForViewContext<T>>[]
@@ -413,7 +416,6 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
   }
 
   constructor(
-    private readonly scrollStrategy: RxVirtualScrollStrategy<T>,
     private readonly templateRef: TemplateRef<RxVirtualForViewContext<T>>,
     private readonly ngZone: NgZone,
     readonly viewContainer: ViewContainerRef,
@@ -454,10 +456,24 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
     this.liveCollection?.teardown();
   }
 
+  setScrollStrategy(scrollStrategy: RxVirtualScrollStrategy<T>) {
+    this.scrollStrategy$.next(scrollStrategy);
+  }
+
   private render() {
+    let newStrategy = false;
+    let activeStrategy: RxVirtualScrollStrategy<T> | undefined;
     return combineLatest([
       this.values$,
-      this.scrollStrategy.renderedRange$,
+      this.scrollStrategy$.pipe(
+        switchMap((scrollStrategy) => {
+          if (activeStrategy) {
+            newStrategy = true;
+          }
+          activeStrategy = scrollStrategy;
+          return scrollStrategy.renderedRange$;
+        }),
+      ),
     ]).pipe(
       // map iterable to latest diff
       switchMap(([items, range]) => {
@@ -476,7 +492,7 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
           const updates = Array.from(this.liveCollection.viewsUpdated).sort(
             (a, b) => a[1] - b[1],
           );
-          if (updates.length > 0) {
+          if (updates.length > 0 || newStrategy) {
             this.renderingStart$.next(this.liveCollection.updatedIndices);
             for (let i = 0; i < updates.length; i++) {
               const [view, index] = updates[i];
@@ -487,6 +503,11 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
             }
           }
         });
+        if (newStrategy) {
+          newStrategy = false;
+          this.viewsRendered$.next(this.getAllViewsFromViewContainer());
+          return of(iterable);
+        }
         if (viewsRendered.length) {
           this.viewsRendered$.next(viewsRendered);
           return of(iterable);
@@ -498,6 +519,18 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
         return of(null);
       }),
     );
+  }
+
+  private getAllViewsFromViewContainer() {
+    const allViews = new Array<EmbeddedViewRef<RxVirtualForViewContext<T>>>(
+      this.viewContainer.length,
+    );
+    for (let i = 0; i < this.viewContainer.length; i++) {
+      allViews[i] = <EmbeddedViewRef<RxVirtualForViewContext<T>>>(
+        this.viewContainer.get(i)
+      );
+    }
+    return allViews;
   }
 }
 

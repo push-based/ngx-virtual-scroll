@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { BlankComponent } from './blank/blank.component';
 import { AutosizeComponent } from './rxa/autosize.component';
 import { FixedSizeComponent } from './rxa/fixed-size.component';
+import { MixedStrategyComponent } from './rxa/mixed-strategy.component';
 
 export const routes: Routes = [
   {
@@ -15,6 +16,10 @@ export const routes: Routes = [
   {
     path: 'rxa/autosize',
     component: AutosizeComponent,
+  },
+  {
+    path: 'rxa/mixed-strategy',
+    component: MixedStrategyComponent,
   },
   {
     path: '',
