@@ -1,4 +1,4 @@
-# Push-Based ngx-virtual-scroll
+# Push-Based ngx-virtual-scrolling
 
 **This is a fork of [@rx-angulars](https://github.com/rx-angular/rx-angular) [virtual-scrolling](https://www.rx-angular.io/docs/template/api/virtual-scrolling) implementation**
 
@@ -11,7 +11,7 @@ Some features implemented in this version will be backported to the RxAngular or
 ## Installation
 
 ```bash
-npm install @push-based/ngx-virtual-scroll -S
+npm install @push-based/ngx-virtual-scrolling -S
 ```
 
 ## Demo Application
