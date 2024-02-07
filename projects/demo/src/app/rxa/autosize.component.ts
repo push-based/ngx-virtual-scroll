@@ -14,6 +14,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
         #demoPanel
         (scrollToIndex)="viewport.scrollToIndex($event)"
         [itemAmount]="(state.items$ | async).length"
+        [(appendOnly)]="appendOnly"
         [renderedItemsAmount]="state.renderedItems$ | async"
         [scrolledIndex]="viewport.scrolledIndexChange | async"
         [showWithResizeObserver]="true"
@@ -30,6 +31,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
           [withResizeObserver]="withResizeObserver"
           [tombstoneSize]="100"
           [initialScrollIndex]="demoPanel.initialScrollTo"
+          [appendOnly]="appendOnly"
           autosize
           #viewport
         >
@@ -73,6 +75,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutosizeComponent {
+  appendOnly = false;
   withResizeObserver = true;
 
   constructor(

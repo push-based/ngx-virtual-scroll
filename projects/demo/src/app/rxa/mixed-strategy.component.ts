@@ -16,7 +16,9 @@ import { DemoComponentState } from '../shared/demo-component.state';
       <demo-panel
         #demoPanel
         (scrollToIndex)="viewport.scrollToIndex($event)"
+        [withScrollStrategyChange]="true"
         [(scrollStrategy)]="strategy"
+        [(appendOnly)]="appendOnly"
         [itemAmount]="(state.items$ | async).length"
         [renderedItemsAmount]="state.renderedItems$ | async"
         [scrolledIndex]="viewport.scrolledIndexChange | async"
@@ -82,6 +84,15 @@ import { DemoComponentState } from '../shared/demo-component.state';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MixedStrategyComponent {
+  _appendOnly = false;
+  get appendOnly() {
+    return this._appendOnly;
+  }
+  set appendOnly(appendOnly: boolean) {
+    this._appendOnly = appendOnly;
+    this.fixedSizeStrategy.appendOnly = this._appendOnly;
+    this.autosizeStrategy.appendOnly = this._appendOnly;
+  }
   withResizeObserver = true;
 
   scrollStrategy: RxVirtualScrollStrategy<Item>;

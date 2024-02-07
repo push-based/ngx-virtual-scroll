@@ -101,6 +101,17 @@ import { DataService } from '../data.service';
                 />
               </td>
             </tr>
+            <tr>
+              <td>appendOnly</td>
+              <td>
+                <input
+                  type="checkbox"
+                  (change)="appendOnlyChange.next(appendOnlyInput.checked)"
+                  [checked]="appendOnly"
+                  #appendOnlyInput
+                />
+              </td>
+            </tr>
             <tr *ngIf="showWithResizeObserver">
               <td>Enable Resize Observer</td>
               <td>
@@ -114,7 +125,7 @@ import { DataService } from '../data.service';
                 />
               </td>
             </tr>
-            <tr>
+            <tr *ngIf="withScrollStrategyChange">
               <td>Select Strategy</td>
               <td>
                 <select
@@ -213,12 +224,15 @@ export class DemoPanelComponent {
   @Output() scrollStrategyChange = new EventEmitter<
     'fixed' | 'auto' | 'dynamic'
   >();
+  @Input() withScrollStrategyChange = false;
   @Input() scrollToExperimental = false;
   @Input() itemAmount = 0;
   @Input() renderedItemsAmount = 0;
   @Input() showWithResizeObserver = false;
   @Input() withResizeObserver = false;
   @Output() withResizeObserverChange = new EventEmitter<boolean>();
+  @Input() appendOnly = false;
+  @Output() appendOnlyChange = new EventEmitter<boolean>();
   @Input() scrolledIndex = 0;
   @Output() scrollToIndex = new EventEmitter<number>();
   @Input() runwayItemsOpposite = 5;

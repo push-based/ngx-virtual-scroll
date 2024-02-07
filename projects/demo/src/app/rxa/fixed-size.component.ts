@@ -13,6 +13,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
         #demoPanel
         (scrollToIndex)="viewport.scrollToIndex($event)"
         [itemAmount]="(state.items$ | async).length"
+        [(appendOnly)]="appendOnly"
         [renderedItemsAmount]="state.renderedItems$ | async"
         [scrolledIndex]="viewport.scrolledIndexChange | async"
         [(runwayItems)]="state.runwayItems"
@@ -23,6 +24,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
         <list-header></list-header>
         <rx-virtual-scroll-viewport
           #viewport
+          [appendOnly]="appendOnly"
           [runwayItemsOpposite]="state.runwayItemsOpposite"
           [runwayItems]="state.runwayItems"
           [itemSize]="100"
@@ -62,6 +64,8 @@ import { DemoComponentState } from '../shared/demo-component.state';
   providers: [DataService, DemoComponentState],
 })
 export class FixedSizeComponent {
+  appendOnly = false;
+
   constructor(
     public state: DemoComponentState,
     private dataService: DataService,
