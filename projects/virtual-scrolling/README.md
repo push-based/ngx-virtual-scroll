@@ -1,24 +1,24 @@
-# VirtualScrolling
+# Push-Based ngx-virtual-scrolling
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.2.0.
+**This is a fork of [@rx-angulars](https://github.com/rx-angular/rx-angular) [virtual-scrolling](https://www.rx-angular.io/docs/template/api/virtual-scrolling) implementation**
 
-## Code scaffolding
+If you are interested in the most recent version with all the RxAngular features, please install the original version.
 
-Run `ng generate component component-name --project virtual-scrolling` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project virtual-scrolling`.
-> Note: Don't forget to add `--project virtual-scrolling` or else it will be added to the default project in your `angular.json` file. 
+This version is specifically designed to work with angular v12 and without any usage of RxAngulars [RenderStrategies](https://www.rx-angular.io/docs/cdk/render-strategies).
 
-## Build
+Some features implemented in this version will be backported to the RxAngular original implementation.
 
-Run `ng build virtual-scrolling` to build the project. The build artifacts will be stored in the `dist/` directory.
+## Installation
 
-## Publishing
+```bash
+npm install @push-based/ngx-virtual-scrolling -S
+```
 
-After building your library with `ng build virtual-scrolling`, go to the dist folder `cd dist/virtual-scrolling` and run `npm publish`.
+## Demo Application
 
-## Running unit tests
+There is a demo application included in the repository which showcases most of the features. Run the following command
+to serve the demo application.
 
-Run `ng test virtual-scrolling` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```bash
+npm run start
+```
