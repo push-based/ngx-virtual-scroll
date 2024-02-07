@@ -152,11 +152,11 @@ export class AutoSizeVirtualScrollStrategy<T>
 
   /**
    * @description
-   * When enabled, the autosized scroll strategy removes css styles that
-   * prevent the scrollbar from being in sync with the input device.
-   * Use with caution, as this can lead to extremely weird scroll behavior
-   * on chromium based browsers when the rendered views differ
-   * in dimensions too much or change dimensions heavily.
+   * When enabled, the autosized scroll strategy uses attaches a `ResizeObserver`
+   * to every view within the given renderedRange. If your views receive
+   * dimension changes that are not caused by list updates, this is a way to
+   * still track height changes. This also applies to resize events of the whole
+   * document.
    */
   @Input()
   set withResizeObserver(input: boolean) {
