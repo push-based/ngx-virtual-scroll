@@ -135,6 +135,15 @@
             ],
             "scripts": []
           }
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "projects/virtual-scrolling/src/**/*.ts",
+              "projects/virtual-scrolling/src/**/*.html"
+            ]
+          }
         }
       }
     }
