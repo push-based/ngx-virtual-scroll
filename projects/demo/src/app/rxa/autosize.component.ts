@@ -1,3 +1,4 @@
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { DataService, Item } from '../shared/data.service';
 import { DemoComponentState } from '../shared/demo-component.state';
@@ -47,6 +48,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
             (moveDown)="state.dataService.moveItem(item, i, i + 1)"
             [item]="item"
           >
+            <div *cdkDragPreview>{{ item.content }}</div>
             <div class="item__description" *ngIf="item.description">
               <div class="desc-title">
                 <mat-icon>description</mat-icon> Additional Info
@@ -72,6 +74,18 @@ import { DemoComponentState } from '../shared/demo-component.state';
 })
 export class AutosizeComponent {
   withResizeObserver = true;
-  trackItem = (i: number, item: Item) => item.id;
-  constructor(public state: DemoComponentState) {}
+
+  constructor(
+    public state: DemoComponentState,
+    private dataService: DataService,
+  ) {}
+
+  drop(event: CdkDragDrop<Item>) {
+    moveItemInArray(
+      this.dataService.items,
+      event.previousIndex,
+      event.currentIndex,
+    );
+    this.dataService.setItems([...this.dataService.items]);
+  }
 }

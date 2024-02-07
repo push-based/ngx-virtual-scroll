@@ -1,5 +1,5 @@
 import { moveItemInArray } from '@angular/cdk/drag-drop';
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { faker } from '@faker-js/faker';
 
@@ -72,6 +72,11 @@ export class DataService {
       );
       this.items$.next(this.items);
     }
+  }
+
+  setItems(items: Item[]) {
+    this.items = items;
+    this.items$.next(items);
   }
 
   init(amount: number) {

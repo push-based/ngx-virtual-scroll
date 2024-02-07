@@ -85,6 +85,15 @@ export class FixedSizeVirtualScrollStrategy<T>
     return this._itemSize;
   }
 
+  private _appendOnly = false;
+  @Input()
+  set appendOnly(input: boolean) {
+    this._appendOnly = input != null && `${input}` !== 'false';
+  }
+  get appendOnly(): boolean {
+    return this._appendOnly;
+  }
+
   private _itemSize = DEFAULT_ITEM_SIZE;
 
   /**
@@ -276,6 +285,10 @@ export class FixedSizeVirtualScrollStrategy<T>
                   this.itemSize,
               ),
             );
+          }
+          if (this.appendOnly) {
+            range.start = Math.min(this.renderedRange.start, range.start);
+            range.end = Math.max(this.renderedRange.end, range.end);
           }
           this.scrolledIndex = Math.floor(this.scrollTop / this.itemSize);
           return range;

@@ -1,3 +1,4 @@
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { NgModule } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -42,6 +43,7 @@ import { ListHeaderComponent } from './shared/item/list-header.component';
     MatButtonModule,
     MatTooltipModule,
     MatCheckboxModule,
+    DragDropModule,
   ],
 })
 export class AppModule {}

@@ -1,6 +1,7 @@
+import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-import { DataService } from '../shared/data.service';
+import { DataService, Item } from '../shared/data.service';
 import { DemoComponentState } from '../shared/demo-component.state';
 
 @Component({
@@ -41,7 +42,9 @@ import { DemoComponentState } from '../shared/demo-component.state';
             (remove)="state.dataService.removeItem(item)"
             (moveDown)="state.dataService.moveItem(item, i, i + 1)"
             [item]="item"
-          ></item>
+          >
+            <div *cdkDragPreview>{{ item.content }}</div>
+          </item>
         </rx-virtual-scroll-viewport>
       </div>
     </ng-container>
@@ -59,5 +62,17 @@ import { DemoComponentState } from '../shared/demo-component.state';
   providers: [DataService, DemoComponentState],
 })
 export class FixedSizeComponent {
-  constructor(public state: DemoComponentState) {}
+  constructor(
+    public state: DemoComponentState,
+    private dataService: DataService,
+  ) {}
+
+  drop(event: CdkDragDrop<Item[]>) {
+    moveItemInArray(
+      this.dataService.items,
+      event.previousIndex,
+      event.currentIndex,
+    );
+    this.dataService.setItems([...this.dataService.items]);
+  }
 }

@@ -141,6 +141,15 @@ export class AutoSizeVirtualScrollStrategy<T>
     extractSize?: (entry: ResizeObserverEntry) => number;
   };
 
+  private _appendOnly = false;
+  @Input()
+  set appendOnly(input: boolean) {
+    this._appendOnly = input != null && `${input}` !== 'false';
+  }
+  get appendOnly(): boolean {
+    return this._appendOnly;
+  }
+
   /**
    * @description
    * When enabled, the autosized scroll strategy removes css styles that
@@ -525,6 +534,10 @@ export class AutoSizeVirtualScrollStrategy<T>
               this.contentLength,
               this.lastScreenItem.index + this.runwayItems + addIndexAtEnd,
             );
+          }
+          if (this.appendOnly) {
+            range.start = Math.min(this.renderedRange.start, range.start);
+            range.end = Math.max(this.renderedRange.end, range.end);
           }
           return range;
         }),
