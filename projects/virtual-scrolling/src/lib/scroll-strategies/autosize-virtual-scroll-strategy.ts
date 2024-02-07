@@ -50,7 +50,7 @@ import {
   RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
   RxVirtualScrollDefaultOptions,
 } from '../virtual-scroll.config';
-import { RxaResizeObserver } from './resize-observer';
+import { RxResizeObserver } from './resize-observer';
 
 /** @internal */
 type VirtualViewItem = {
@@ -98,7 +98,7 @@ const defaultSizeExtract = (entry: ResizeObserverEntry) =>
       provide: RxVirtualScrollStrategy,
       useExisting: AutoSizeVirtualScrollStrategy,
     },
-    RxaResizeObserver,
+    RxResizeObserver,
   ],
 })
 export class AutoSizeVirtualScrollStrategy<T>
@@ -274,7 +274,7 @@ export class AutoSizeVirtualScrollStrategy<T>
   }
 
   constructor(
-    private resizeObserver: RxaResizeObserver,
+    private resizeObserver: RxResizeObserver,
     @Inject(RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS)
     @Optional()
     private readonly defaults?: RxVirtualScrollDefaultOptions,

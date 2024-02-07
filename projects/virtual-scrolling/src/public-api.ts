@@ -5,6 +5,7 @@ export {
   RxVirtualScrollViewport,
   RxVirtualScrollElement,
 } from './lib/model';
+export { RxResizeObserver } from './lib/scroll-strategies/resize-observer';
 export { RxVirtualForViewContext } from './lib/list-view-context';
 export * from './lib/scroll-strategies/autosize-virtual-scroll-strategy';
 export * from './lib/scroll-strategies/fixed-size-virtual-scroll-strategy';

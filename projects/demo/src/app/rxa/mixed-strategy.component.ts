@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RxVirtualScrollStrategy } from '../../../../virtual-scrolling/src/lib/model';
 import { AutoSizeVirtualScrollStrategy } from '../../../../virtual-scrolling/src/lib/scroll-strategies/autosize-virtual-scroll-strategy';
 import { FixedSizeVirtualScrollStrategy } from '../../../../virtual-scrolling/src/lib/scroll-strategies/fixed-size-virtual-scroll-strategy';
-import { RxaResizeObserver } from '../../../../virtual-scrolling/src/lib/scroll-strategies/resize-observer';
+import { RxResizeObserver } from '../../../../virtual-scrolling/src/lib/scroll-strategies/resize-observer';
 import { DataService, Item } from '../shared/data.service';
 import { DemoComponentState } from '../shared/demo-component.state';
 
@@ -79,7 +79,7 @@ import { DemoComponentState } from '../shared/demo-component.state';
     DemoComponentState,
     FixedSizeVirtualScrollStrategy,
     AutoSizeVirtualScrollStrategy,
-    RxaResizeObserver,
+    RxResizeObserver,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -112,7 +112,7 @@ export class MixedStrategyComponent {
 
   constructor(
     public state: DemoComponentState,
-    private resizeObserver: RxaResizeObserver,
+    private resizeObserver: RxResizeObserver,
     private fixedSizeStrategy: FixedSizeVirtualScrollStrategy<Item>,
     private autosizeStrategy: AutoSizeVirtualScrollStrategy<Item>,
   ) {
