@@ -16,4 +16,3 @@ export {
   RxVirtualScrollDefaultOptions,
 } from './lib/virtual-scroll.config';
 export { RxVirtualScrollElementDirective } from './lib/virtual-scroll-element.directive';
-export { RxVirtualScrollWindowDirective } from './lib/virtual-scroll-window.directive';
