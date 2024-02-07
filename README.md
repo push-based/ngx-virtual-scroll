@@ -1,27 +1,24 @@
-# RxVirtualScroll
+# Push-Based ngx-virtual-scroll
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 12.2.18.
+**This is a fork of [@rx-angulars](https://github.com/rx-angular/rx-angular) [virtual-scrolling](https://www.rx-angular.io/docs/template/api/virtual-scrolling) implementation**
 
-## Development server
+If you are interested in the most recent version with all the RxAngular features, please install the original version.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+This version is specifically designed to work with angular v12 and without any usage of RxAngulars [RenderStrategies](https://www.rx-angular.io/docs/cdk/render-strategies).
 
-## Code scaffolding
+Some features implemented in this version will be backported to the RxAngular original implementation.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Installation
 
-## Build
+```bash
+npm install @push-based/ngx-virtual-scroll -S
+```
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## Demo Application
 
-## Running unit tests
+There is a demo application included in the repository which showcases most of the features. Run the following command
+to serve the demo application.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+```bash
+npm run start
+```
