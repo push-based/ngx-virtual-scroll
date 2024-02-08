@@ -212,6 +212,8 @@ export class RxVirtualScrollViewportComponent
   }
 
   ngOnInit() {
+    // make it hot
+    this.scrollStrategy$.pipe(takeUntil(this.destroy$)).subscribe();
     if (NG_DEV_MODE && !this._scrollStrategy) {
       throw Error(
         'Error: rx-virtual-scroll-viewport requires an `RxVirtualScrollStrategy` to be set.',

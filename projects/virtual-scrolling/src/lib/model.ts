@@ -80,6 +80,7 @@ export abstract class RxVirtualScrollViewport {
   abstract elementScrolled$: Observable<void>;
   abstract containerRect$: Observable<{ height: number; width: number }>;
   abstract getScrollTop(): number;
+  abstract scrollToIndex(index: number, behavior?: ScrollBehavior): void;
   abstract scrollTo(scrollTo: number, behavior?: ScrollBehavior): void;
   abstract getScrollElement(): HTMLElement;
   abstract measureOffset(): number;
