@@ -30,13 +30,18 @@ import {
   takeUntil,
   catchError,
   switchAll,
+  debounce,
 } from 'rxjs/operators';
 import { RxVirtualForViewContext } from './list-view-context';
 
 import { RxVirtualScrollStrategy, RxVirtualViewRepeater } from './model';
 import { reconcile } from './reconciliation/list-reconciliation';
 import { LiveCollectionLContainerImpl } from './reconciliation/rx-live-collection';
-import { coerceObservable, getZoneUnPatchedApi } from './util';
+import {
+  coerceObservable,
+  getZoneUnPatchedApi,
+  unpatchedMicroTask,
+} from './util';
 import {
   DEFAULT_TEMPLATE_CACHE_SIZE,
   RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
@@ -475,7 +480,9 @@ export class RxVirtualFor<T, U extends Array<T> = Array<T>>
         }),
       ),
     ]).pipe(
-      // map iterable to latest diff
+      // wait for scrollStrategy to calculate stuff on value updates
+      // before actually emitting new views
+      debounce(() => unpatchedMicroTask()),
       switchMap(([items, range]) => {
         const iterable = items.slice(range.start, range.end);
         const viewsRendered = new Array<

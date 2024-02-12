@@ -429,8 +429,24 @@ export class AutoSizeVirtualScrollStrategy<T>
           });
         }
         existingIds.clear();
+        if (dataLength < this._renderedRange.end) {
+          const rangeDiff = this._renderedRange.end - this._renderedRange.start;
+          const anchorDiff = this.anchorItem.index - this._renderedRange.start;
+          this._renderedRange.end = Math.min(
+            dataLength,
+            this._renderedRange.end,
+          );
+          this._renderedRange.start = Math.max(
+            0,
+            this._renderedRange.end - rangeDiff,
+          );
+          // this.anchorItem.offset = 0;
+          this.anchorItem.index = Math.max(
+            0,
+            this._renderedRange.start + anchorDiff,
+          );
+        }
         this.contentLength = dataLength;
-        this._renderedRange.end = Math.min(dataLength, this._renderedRange.end);
         this.contentSize = size;
       }),
       finalize(() => itemCache.clear()),
