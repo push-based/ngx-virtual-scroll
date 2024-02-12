@@ -14,7 +14,10 @@ import { AppComponent } from './app.component';
 import { routes } from './app.routes';
 import { BlankComponent } from './blank/blank.component';
 import { AutosizeComponent } from './rxa/autosize.component';
+import { DynamicContentComponent } from './rxa/dynamic-content.component';
+import { DynamicTemplateDirective } from './rxa/dynamic-template.directive';
 import { FixedSizeComponent } from './rxa/fixed-size.component';
+import { ListComponent } from './rxa/list.component';
 import { MixedStrategyComponent } from './rxa/mixed-strategy.component';
 import { DemoPanelModule } from './shared/demo-panel/demo-panel.component';
 import { ItemComponent } from './shared/item/item.component';
@@ -29,6 +32,9 @@ import { ListHeaderComponent } from './shared/item/list-header.component';
     AutosizeComponent,
     FixedSizeComponent,
     MixedStrategyComponent,
+    DynamicTemplateDirective,
+    ListComponent,
+    DynamicContentComponent,
   ],
   bootstrap: [AppComponent],
   imports: [

@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { BlankComponent } from './blank/blank.component';
 import { AutosizeComponent } from './rxa/autosize.component';
+import { DynamicContentComponent } from './rxa/dynamic-content.component';
 import { FixedSizeComponent } from './rxa/fixed-size.component';
 import { MixedStrategyComponent } from './rxa/mixed-strategy.component';
 
@@ -22,8 +23,7 @@ export const routes: Routes = [
     component: MixedStrategyComponent,
   },
   {
-    path: '',
-    redirectTo: 'rxa/fixed-size',
-    pathMatch: 'full',
+    path: 'rxa/dynamic-content',
+    component: DynamicContentComponent,
   },
 ];
