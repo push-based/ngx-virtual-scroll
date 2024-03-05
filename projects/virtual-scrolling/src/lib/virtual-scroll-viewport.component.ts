@@ -128,7 +128,6 @@ export class RxVirtualScrollViewportComponent
   );
   private _scrollStrategy: RxVirtualScrollStrategy<unknown>;
   @Input()
-  // TODO: make observable
   set scrollStrategy(
     scrollStrategy:
       | RxVirtualScrollStrategy<unknown>
@@ -136,6 +135,8 @@ export class RxVirtualScrollViewportComponent
   ) {
     this._scrollStrategy$.next(scrollStrategy);
   }
+
+  @Input() reserveSpaceAtEnd?: number;
 
   /** @internal */
   @ContentChild(RxVirtualViewRepeater)
@@ -302,6 +303,9 @@ export class RxVirtualScrollViewportComponent
   }
 
   protected updateContentSize(size: number): void {
+    if (this.reserveSpaceAtEnd > 0) {
+      size += this.reserveSpaceAtEnd;
+    }
     if (this.scrollElement) {
       this.elementRef.nativeElement.style.height = `${size}px`;
     } else {
