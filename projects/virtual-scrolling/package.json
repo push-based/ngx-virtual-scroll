@@ -1,10 +1,26 @@
 {
   "name": "@push-based/ngx-virtual-scrolling",
   "version": "0.0.5",
+  "description": "A high performance virtual scrolling implementation for Angular.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Julian Jandl <julian@jandl.wien>",
   "peerDependencies": {
     "@angular/common": ">=12.2.0",
     "@angular/core": ">=12.2.0"
   },
+  "contributors": [
+    {
+      "name": "Julian Jandl",
+      "email": "julian@jandl.wien"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/push-based/ngx-virtual-scroll.git"
+  },
+  "license": "MIT",
   "dependencies": {
     "tslib": "^2.3.0"
   }
