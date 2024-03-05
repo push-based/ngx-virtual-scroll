@@ -1,6 +1,6 @@
 {
   "name": "@push-based/ngx-virtual-scrolling",
-  "version": "0.0.5",
+  "version": "1.0.0",
   "description": "A high performance virtual scrolling implementation for Angular.",
   "publishConfig": {
     "access": "public"
