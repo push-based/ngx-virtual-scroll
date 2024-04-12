@@ -88,6 +88,7 @@ export class LiveCollectionLContainerImpl<T> extends LiveCollection<
   teardown() {
     this.viewsUpdated.clear();
     this.updatedIndices.clear();
+    this.viewCache.forEach((c) => c.destroy());
     this.viewCache = null;
   }
 
