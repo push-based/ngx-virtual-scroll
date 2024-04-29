@@ -4,10 +4,8 @@ import {
   Inject,
   Input,
   NgModule,
-  OnChanges,
   OnDestroy,
   Optional,
-  SimpleChanges,
 } from '@angular/core';
 import {
   combineLatest,
@@ -47,6 +45,9 @@ import {
   unpatchedMicroTask,
 } from '../util';
 import {
+  DEFAULT_ITEM_SIZE,
+  DEFAULT_RUNWAY_ITEMS,
+  DEFAULT_RUNWAY_ITEMS_OPPOSITE,
   RX_VIRTUAL_SCROLL_DEFAULT_OPTIONS,
   RxVirtualScrollDefaultOptions,
 } from '../virtual-scroll.config';
@@ -103,19 +104,41 @@ const defaultSizeExtract = (entry: ResizeObserverEntry) =>
 })
 export class AutoSizeVirtualScrollStrategy<T>
   extends RxVirtualScrollStrategy<T>
-  implements OnChanges, OnDestroy
+  implements OnDestroy
 {
   /**
    * @description
    * The amount of items to render upfront in scroll direction
    */
-  @Input() runwayItems = this.defaults?.runwayItems ?? 10;
+  private _runwayItems = DEFAULT_RUNWAY_ITEMS;
+  @Input()
+  set runwayItems(runwayItems: number) {
+    const newValue = runwayItems ?? DEFAULT_RUNWAY_ITEMS;
+    if (newValue !== this._runwayItems) {
+      this._runwayItems = newValue;
+      this.recalculateRange$.next();
+    }
+  }
+  get runwayItems(): number {
+    return this._runwayItems;
+  }
 
   /**
    * @description
    * The amount of items to render upfront in reverse scroll direction
    */
-  @Input() runwayItemsOpposite = this.defaults?.runwayItemsOpposite ?? 2;
+  private _runwayItemsOpposite = DEFAULT_RUNWAY_ITEMS_OPPOSITE;
+  @Input()
+  set runwayItemsOpposite(runwayItemsOpposite: number) {
+    const newValue = runwayItemsOpposite ?? DEFAULT_RUNWAY_ITEMS_OPPOSITE;
+    if (newValue !== this._runwayItemsOpposite) {
+      this._runwayItemsOpposite = newValue;
+      this.recalculateRange$.next();
+    }
+  }
+  get runwayItemsOpposite(): number {
+    return this._runwayItemsOpposite;
+  }
 
   /**
    * @description
@@ -127,7 +150,7 @@ export class AutoSizeVirtualScrollStrategy<T>
    * will be the size of a tombstone item being rendered before the actual item
    * is inserted into its position.
    */
-  @Input() tombstoneSize = this.defaults?.itemSize ?? 50;
+  @Input() tombstoneSize = this.defaults?.itemSize ?? DEFAULT_ITEM_SIZE;
 
   /**
    * @description
@@ -280,17 +303,6 @@ export class AutoSizeVirtualScrollStrategy<T>
     private readonly defaults?: RxVirtualScrollDefaultOptions,
   ) {
     super();
-  }
-
-  /** @internal */
-  ngOnChanges(changes: SimpleChanges) {
-    if (
-      (changes['runwayItemsOpposite'] &&
-        !changes['runwayItemsOpposite'].firstChange) ||
-      (changes['runwayItems'] && !changes['runwayItems'].firstChange)
-    ) {
-      this.recalculateRange$.next();
-    }
   }
 
   /** @internal */

@@ -4,10 +4,8 @@ import {
   Inject,
   Input,
   NgModule,
-  OnChanges,
   OnDestroy,
   Optional,
-  SimpleChanges,
 } from '@angular/core';
 import {
   combineLatest,
@@ -69,7 +67,7 @@ import {
 })
 export class FixedSizeVirtualScrollStrategy<T>
   extends RxVirtualScrollStrategy<T>
-  implements OnChanges, OnDestroy
+  implements OnDestroy
 {
   /**
    * @description
@@ -100,14 +98,35 @@ export class FixedSizeVirtualScrollStrategy<T>
    * @description
    * The amount of items to render upfront in scroll direction
    */
-  @Input() runwayItems = this.defaults?.runwayItems ?? DEFAULT_RUNWAY_ITEMS;
+  private _runwayItems = DEFAULT_RUNWAY_ITEMS;
+  @Input()
+  set runwayItems(runwayItems: number) {
+    const newValue = runwayItems ?? DEFAULT_RUNWAY_ITEMS;
+    if (newValue !== this._runwayItems) {
+      this._runwayItems = newValue;
+      this.runwayStateChanged$.next();
+    }
+  }
+  get runwayItems(): number {
+    return this._runwayItems;
+  }
 
   /**
    * @description
    * The amount of items to render upfront in reverse scroll direction
    */
-  @Input() runwayItemsOpposite =
-    this.defaults?.runwayItemsOpposite ?? DEFAULT_RUNWAY_ITEMS_OPPOSITE;
+  private _runwayItemsOpposite = DEFAULT_RUNWAY_ITEMS_OPPOSITE;
+  @Input()
+  set runwayItemsOpposite(runwayItemsOpposite: number) {
+    const newValue = runwayItemsOpposite ?? DEFAULT_RUNWAY_ITEMS_OPPOSITE;
+    if (newValue !== this._runwayItemsOpposite) {
+      this._runwayItemsOpposite = newValue;
+      this.runwayStateChanged$.next();
+    }
+  }
+  get runwayItemsOpposite(): number {
+    return this._runwayItemsOpposite;
+  }
 
   /** @internal */
   private readonly runwayStateChanged$ = new Subject<void>();
@@ -160,17 +179,6 @@ export class FixedSizeVirtualScrollStrategy<T>
     private readonly defaults?: RxVirtualScrollDefaultOptions,
   ) {
     super();
-  }
-
-  /** @internal */
-  ngOnChanges(changes: SimpleChanges) {
-    if (
-      (changes['runwayItemsOpposite'] &&
-        !changes['runwayItemsOpposite'].firstChange) ||
-      (changes['runwayItems'] && !changes['runwayItems'].firstChange)
-    ) {
-      this.runwayStateChanged$.next();
-    }
   }
 
   ngOnDestroy() {
